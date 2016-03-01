@@ -1,0 +1,5 @@
+#!/bin/bash
+# The logic to start up your application should be put in this
+# script. The application will work only if it binds to
+# $OPENSHIFT_DIY_IP:8080
+nohup mvn -f $OPENSHIFT_REPO_DIR/pom.xml exec:java -Dmaven.repo.local=$OPENSHIFT_DATA_DIR/repository > ${OPENSHIFT_DIY_LOG_DIR}/slack.log 2>&1 & 
