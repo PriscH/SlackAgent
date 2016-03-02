@@ -7,9 +7,12 @@ import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
 import com.ullink.slack.simpleslackapi.listeners.SlackMessagePostedListener;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Random;
 
-public class App {
+public class Bot {
 
     private static final String[] TASKS = {
             "Help with documentation",
@@ -26,6 +29,14 @@ public class App {
         session.addMessagePostedListener(new BasicSlackListener());
         session.connect();
 
+        int port = 10001;
+        try ( ServerSocket serverSocket = new ServerSocket(port);
+              Socket clientSocket = serverSocket.accept();
+              PrintWriter clientWriter = new PrintWriter(clientSocket.getOutputStream(), true) ) {
+
+            clientWriter.println("Hello");
+        }
+
         while (true) {
             Thread.sleep(1000L);
         }
@@ -33,7 +44,6 @@ public class App {
 
     private static final class BasicSlackListener implements SlackMessagePostedListener {
 
-        @Override
         public void onEvent(SlackMessagePosted event, SlackSession session) {
             String botId = session.sessionPersona().getId();
 
