@@ -5,6 +5,7 @@ import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
 import com.ullink.slack.simpleslackapi.listeners.SlackMessagePostedListener;
+import sun.management.Agent;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,21 +26,14 @@ public class Bot {
     private static final Random RANDOM = new Random();
 
     public static void main(String[] args) throws IOException, InterruptedException {
+        /*
         SlackSession session = SlackSessionFactory.createWebSocketSlackSession("xoxb-23800751190-BueL6xAziOVuZM0I5I7nyU1B");
         session.addMessagePostedListener(new BasicSlackListener());
         session.connect();
+        */
 
-        int port = 10001;
-        try ( ServerSocket serverSocket = new ServerSocket(port);
-              Socket clientSocket = serverSocket.accept();
-              PrintWriter clientWriter = new PrintWriter(clientSocket.getOutputStream(), true) ) {
-
-            clientWriter.println("Hello");
-        }
-
-        while (true) {
-            Thread.sleep(1000L);
-        }
+        AgentServer server = new AgentServer();
+        server.start();
     }
 
     private static final class BasicSlackListener implements SlackMessagePostedListener {
