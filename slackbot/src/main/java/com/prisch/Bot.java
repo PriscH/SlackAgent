@@ -1,16 +1,12 @@
 package com.prisch;
 
+import com.prisch.messages.TicketDetails;
 import com.ullink.slack.simpleslackapi.SlackMessageHandle;
 import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
-import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
 import com.ullink.slack.simpleslackapi.listeners.SlackMessagePostedListener;
-import sun.management.Agent;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.Random;
 
 public class Bot {
@@ -32,8 +28,16 @@ public class Bot {
         session.connect();
         */
 
-        AgentServer server = new AgentServer();
+        AgentServer server = new AgentServer("localhost", 8080);
         server.start();
+
+        while (true) {
+            Thread.sleep(1000L);
+
+            if (server.isConnected()) {
+                server.send(new TicketDetails.Request());
+            }
+        }
     }
 
     private static final class BasicSlackListener implements SlackMessagePostedListener {

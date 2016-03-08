@@ -3,127 +3,81 @@ package com.prisch;
 import com.google.gson.Gson;
 import com.prisch.messages.Message;
 import com.prisch.messages.MessageMapping;
-import com.prisch.messages.TicketDetails;
+import org.java_websocket.WebSocket;
+import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.server.WebSocketServer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class AgentServer {
+public class AgentServer extends WebSocketServer {
 
-    private static final int PORT = 10001;
     private static final Gson GSON = new Gson();
 
-    private Thread listenerThread;
-    private Thread senderThread;
-
     private Map<Integer, CompletableFuture<Message>> futureMap = new HashMap<>();
-    private BlockingQueue<Message> messageQueue = new ArrayBlockingQueue<>(5);
     private AtomicInteger messageCount = new AtomicInteger();
 
-    private volatile boolean connected;
+    private Optional<WebSocket> connection = Optional.empty();
 
-    public void start() {
-        while (true) {
-            try ( ServerSocket serverSocket = new ServerSocket(PORT);
-                  Socket clientSocket = serverSocket.accept() ){
-
-                connected = true;
-
-                listenerThread = new Thread(new Listener(clientSocket));
-                listenerThread.start();
-
-                senderThread = new Thread(new Sender(clientSocket));
-                senderThread.start();
-
-                while (connected) {
-                    Thread.sleep(1000L);
-                    if (isConnected()) {
-                        Future<Message> test = send(new TicketDetails.Request());
-                        System.out.println(GSON.toJson(test.get()).toString());
-                    }
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            } finally {
-                connected = false;
-                listenerThread.interrupt();
-                senderThread.interrupt();
-            }
-        }
+    public AgentServer(String address, int port) {
+        super(new InetSocketAddress(address, port));
     }
 
+    // ===== Interface =====
+
     public Future<Message> send(Message message) {
-        if (!isConnected()) {
-            throw new IllegalStateException("The agent is not connected.");
+        synchronized (connection) {
+            if (!isConnected()) {
+                throw new IllegalStateException("No open connection.");
+            }
+
+            message.setId(messageCount.addAndGet(1));
+
+            CompletableFuture<Message> future = new CompletableFuture<>();
+            futureMap.put(message.getId(), future);
+
+            String messageJson = GSON.toJson(message);
+            connection.get().send(messageJson);
+
+            return future;
         }
-
-        message.setId(messageCount.addAndGet(1));
-
-        CompletableFuture<Message> future = new CompletableFuture<>();
-        futureMap.put(message.getId(), future);
-
-        try {
-            messageQueue.put(message);
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
-        }
-
-        return future;
     }
 
     public boolean isConnected() {
-        return connected;
+        return connection.isPresent();
     }
 
-    private final class Listener implements Runnable {
+    // ===== Inherited Operations =====
 
-        private final Socket socket;
+    @Override
+    public void onMessage(WebSocket connection, String messageJson) {
+        System.out.println("Client message: " + messageJson);
 
-        public Listener(Socket socket) {
-            this.socket = socket;
-        }
+        Class<? extends Message> messageClass = MessageMapping.responseMappingFor(messageJson);
+        Message message = GSON.fromJson(messageJson, messageClass);
 
-        @Override
-        public void run() {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-                while (isConnected()) {
-                    String input = reader.readLine();
-                    Class<? extends Message> messageClass = MessageMapping.responseMappingFor(input);
-                    Message message = GSON.fromJson(input, messageClass);
-                    futureMap.get(message.getId()).complete(message);
-                }
-            } catch (Exception ex) {
-                connected = false;
-            }
+        if (futureMap.containsKey(message.getId())) {
+            futureMap.get(message.getId()).complete(message);
         }
     }
 
-    private final class Sender implements Runnable {
+    @Override
+    public void onOpen(WebSocket connection, ClientHandshake handshake) {
+        this.connection = Optional.of(connection);
+    }
 
-        private final Socket socket;
+    @Override
+    public void onClose(WebSocket connection, int code, String reason, boolean remote) {
+        this.connection = Optional.empty();
+    }
 
-        public Sender(Socket socket) {
-            this.socket = socket;
-        }
-
-        @Override
-        public void run() {
-            try (PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
-                while (isConnected()) {
-                    Message message = messageQueue.take();
-                    writer.println(GSON.toJson(message));
-                }
-            } catch (Exception ex) {
-                connected = false;
-            }
-        }
+    @Override
+    public void onError(WebSocket connection, Exception ex) {
+        this.connection = Optional.empty();
     }
 }
