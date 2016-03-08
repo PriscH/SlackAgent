@@ -2,4 +2,9 @@
 # The logic to start up your application should be put in this
 # script. The application will work only if it binds to
 # $OPENSHIFT_DIY_IP:8080
-nohup mvn -f $OPENSHIFT_REPO_DIR/pom.xml exec:java -Dmaven.repo.local=$OPENSHIFT_DATA_DIR/repository > ${OPENSHIFT_DIY_LOG_DIR}/slack.log 2>&1 & 
+
+export JAVA_HOME=/etc/alternatives/java_sdk_1.8.0
+export JAVACMD=$JAVA_HOME/bin/java
+export M2_HOME=/usr/share/java/apache-maven-3.0.4
+
+nohup $M2_HOME/bin/mvn -f $OPENSHIFT_REPO_DIR/pom.xml exec:java -Dmaven.repo.local=$OPENSHIFT_DATA_DIR/repository > ${OPENSHIFT_DIY_LOG_DIR}/slack.log 2>&1 & 

@@ -2,4 +2,11 @@
 # The logic to start up your application should be put in this
 # script. The application will work only if it binds to
 # $OPENSHIFT_DIY_IP:8080
-mvn -f $OPENSHIFT_REPO_DIR/pom.xml clean install -Dmaven.repo.local=$OPENSHIFT_DATA_DIR/repository
+
+export JAVA_HOME=/etc/alternatives/java_sdk_1.8.0
+export JAVACMD=$JAVA_HOME/bin/java
+export M2_HOME=/usr/share/java/apache-maven-3.0.4
+
+exec $M2_HOME/bin/mvn -f $OPENSHIFT_REPO_DIR/pom.xml clean install -Dmaven.repo.local=$OPENSHIFT_DATA_DIR/repository
+
+
