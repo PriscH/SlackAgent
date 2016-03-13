@@ -32,7 +32,7 @@ public class Bot {
         server.start();
 
         while (true) {
-            Thread.sleep(1000L);
+            Thread.sleep(5000L);
 
             if (server.isConnected()) {
                 server.send(new TicketDetails.Request());
