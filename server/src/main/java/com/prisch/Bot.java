@@ -1,53 +1,62 @@
 package com.prisch;
 
+import com.prisch.messages.Message;
 import com.prisch.messages.TicketDetails;
-import com.ullink.slack.simpleslackapi.SlackMessageHandle;
+import com.ullink.slack.simpleslackapi.SlackChannel;
 import com.ullink.slack.simpleslackapi.SlackSession;
-import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
-import com.ullink.slack.simpleslackapi.listeners.SlackMessagePostedListener;
+import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
 
-import java.io.IOException;
-import java.util.Random;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Bot {
 
-    private static final String[] TASKS = {
-            "Help with documentation",
-            "Performance improvements on the reports",
-            "Troubleshoot the i-District interface",
-            "Deploy to DEV",
-            "Reintegrate the branch"
-    };
+    private final AgentServer agentServer;
+    private final SlackSession slackSession;
 
-    private static final Random RANDOM = new Random();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        /*
-        SlackSession session = SlackSessionFactory.createWebSocketSlackSession("xoxb-23800751190-BueL6xAziOVuZM0I5I7nyU1B");
-        session.addMessagePostedListener(new BasicSlackListener());
-        session.connect();
-        */
-
-        AgentServer server = new AgentServer("localhost", 8080);
-        server.start();
-
-        while (true) {
-            Thread.sleep(5000L);
-
-            if (server.isConnected()) {
-                server.send(new TicketDetails.Request());
-            }
-        }
+    private Bot(String serverHost, int serverPort, String slackToken) {
+        agentServer = new AgentServer(serverHost, serverPort);
+        slackSession = SlackSessionFactory.createWebSocketSlackSession(slackToken);
     }
 
-    private static final class BasicSlackListener implements SlackMessagePostedListener {
+    private void start() throws Exception {
+        slackSession.addMessagePostedListener(new SlackDirectMessageListener(this));
 
-        public void onEvent(SlackMessagePosted event, SlackSession session) {
-            String botId = session.sessionPersona().getId();
+        agentServer.start();
+        slackSession.connect();
+    }
 
-            if (!event.getSender().isBot() && event.getMessageContent().contains(botId)) {
-                SlackMessageHandle handle = session.sendMessage(event.getChannel(), TASKS[RANDOM.nextInt(5)], null);
-            }
+    // ===== Interface =====
+
+    public void handleTicketDetails(String ticketNumber, SlackChannel slackChannel) {
+        TicketDetails.Request request = new TicketDetails.Request();
+        request.setTicketNumber(ticketNumber);
+        CompletableFuture<Message> future = agentServer.send(request);
+
+        future.thenAcceptAsync(response -> {
+            String slackMessage = SlackFormatter.formatTicketDetails((TicketDetails.Response)response);
+            slackSession.sendMessage(slackChannel, slackMessage, null);
+        }, executor);
+    }
+
+    // ===== Main =====
+
+    public static void main(String[] args) throws Exception {
+        Properties properties = new Properties();
+        try (final InputStream propertyStream = Bot.class.getResourceAsStream("/server.properties")) {
+            properties.load(propertyStream);
         }
+
+        String serverHost = properties.getProperty("server.host");
+        int serverPort = Integer.parseInt(properties.getProperty("server.port"));
+        String slackToken = properties.getProperty("slack.token");
+
+        Bot bot = new Bot(serverHost, serverPort, slackToken);
+        bot.start();
     }
 }

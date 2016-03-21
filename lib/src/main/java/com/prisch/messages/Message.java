@@ -20,4 +20,8 @@ public abstract class Message {
     public String getAction() {
         return action;
     }
+
+    protected void setAction(String action) {
+        this.action = action;
+    }
 }

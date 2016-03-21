@@ -8,27 +8,32 @@ import com.prisch.handlers.MessageHandlerFactory;
 import com.prisch.messages.Message;
 import com.prisch.messages.MessageMapping;
 import org.apache.http.HttpHost;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AgentClient {
 
-    private static final int HTTP_OK = 200;
-
-    private static final Logger LOGGER = Logger.getLogger(AgentClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AgentClient.class);
     private static final Gson GSON = new Gson();
 
     private final String serverAddress;
+    private final MessageHandlerFactory messageHandlerFactory;
+
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    public AgentClient(String serverAddress) throws URISyntaxException {
+    public AgentClient(String serverAddress, Optional<HttpHost> proxy, MessageHandlerFactory messageHandlerFactory) throws URISyntaxException {
         this.serverAddress = serverAddress;
-        Unirest.setTimeouts(10000L, 120000L);
+        this.messageHandlerFactory = messageHandlerFactory;
 
-        Unirest.setProxy(new HttpHost("proxy-eur.dmz.int.slb.atosorigin-asp.com", 8080));
+        Unirest.setTimeouts(5000L, 120000L);
+        if (proxy.isPresent()) {
+            Unirest.setProxy(proxy.get());
+        }
     }
 
     // ===== Interface =====
@@ -37,12 +42,11 @@ public class AgentClient {
         while (true) {
             try {
                 HttpResponse<String> response = Unirest.get(serverAddress).asString();
-                if (response.getStatus() == HTTP_OK) {
-                    LOGGER.info(response.getBody());
+                if (!MessageMapping.hasNoContent(response.getBody())) {
                     executor.submit(new CommandHandler(response.getBody()));
                 }
             } catch (UnirestException ex) {
-                LOGGER.error(ex);
+                LOGGER.error(ex.getMessage(), ex);
             }
         }
     }
@@ -61,13 +65,13 @@ public class AgentClient {
             Class<? extends Message> messageClass = MessageMapping.requestMappingFor(messageJson);
             Message message = GSON.fromJson(messageJson, messageClass);
 
-            Message response = MessageHandlerFactory.handle(message);
+            Message response = messageHandlerFactory.handle(message);
             String responseJson = GSON.toJson(response);
 
             try {
                 Unirest.post(serverAddress).body(responseJson).asString();
             } catch (UnirestException ex) {
-                LOGGER.error(ex);
+                LOGGER.error(ex.getMessage(), ex);
             }
         }
     }
