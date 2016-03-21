@@ -57,6 +57,13 @@
             <groupId>com.ullink.slack</groupId>
             <artifactId>simpleslackapi</artifactId>
             <version>0.5.0</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>

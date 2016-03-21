@@ -1,4 +1,7 @@
 server.address=
 proxy.host=
 proxy.port=
+
+# SBM password is NOT required. If it is not specified the program will prompt the user, which is the preferred way of handling passwords.
 sbm.username=
+sbm.password=

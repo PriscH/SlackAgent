@@ -15,8 +15,8 @@ public class Agent {
         Properties properties = loadProperties();
         SBMService sbmService = initializeSBMService(properties);
         MessageHandlerFactory messageHandlerFactory = new MessageHandlerFactory(sbmService);
-        AgentClient agentClient = buildAgentClient(properties, messageHandlerFactory);
 
+        AgentClient agentClient = buildAgentClient(properties, messageHandlerFactory);
         agentClient.connect();
     }
 
@@ -30,12 +30,15 @@ public class Agent {
 
     private static SBMService initializeSBMService(Properties properties) throws Exception {
         String sbmUsername = properties.getProperty("sbm.username");
+        String sbmPassword = properties.getProperty("sbm.password");
 
-        System.console().writer().write(String.format("Provide the SBM password for %s: ", sbmUsername));
-        System.console().writer().flush();
+        if (sbmPassword == null || sbmPassword.isEmpty()) {
+            System.console().writer().write(String.format("Provide the SBM password for %s: ", sbmUsername));
+            System.console().writer().flush();
 
-        char[] sbmPasswordChar = System.console().readPassword();
-        String sbmPassword = new String(sbmPasswordChar);
+            char[] sbmPasswordChar = System.console().readPassword();
+            sbmPassword = new String(sbmPasswordChar);
+        }
 
         SBMService service = new SBMService(sbmUsername, sbmPassword);
         service.initialise();
