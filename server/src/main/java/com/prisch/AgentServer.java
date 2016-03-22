@@ -65,11 +65,14 @@ public class AgentServer extends NanoHTTPD {
 
     @Override
     public Response serve(IHTTPSession session) {
-        if (session.getMethod() == Method.GET) {
+        if (session.getMethod() == Method.GET) { // Long polling for commands
             lastConnectionTime = System.currentTimeMillis();
             return serveCommand();
-        } else if (session.getMethod() == Method.POST) {
+        } else if (session.getMethod() == Method.POST) { // Reponses to commands
             return serveResult(session);
+        } else if (session.getMethod() == Method.HEAD) { // Checking server availability
+            LOGGER.info("The client managed to establish a successful connection.");
+            return newFixedLengthResponse("OK");
         } else {
             return newFixedLengthResponse("OK");
         }

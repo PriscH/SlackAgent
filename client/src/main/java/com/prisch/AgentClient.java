@@ -37,6 +37,14 @@ public class AgentClient {
     // ===== Interface =====
 
     public void connect() {
+        try {
+            Unirest.head(serverAddress).asString();
+            LOGGER.info("Successfully established a connection with the server.");
+        } catch (UnirestException ex) {
+            LOGGER.error("Unable to connect to the server: " + ex.getMessage());
+            return;
+        }
+
         while (true) {
             try {
                 HttpResponse<String> response = Unirest.get(serverAddress).asString();

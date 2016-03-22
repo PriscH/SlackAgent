@@ -32,12 +32,12 @@ public class Bot {
 
     // ===== Interface =====
 
-    public void handleTicketDetails(String ticketNumber, SlackChannel slackChannel) {
+    public void handleTicketDetails(String ticketNumber, SlackChannel slackChannel, String placeholderTimestamp) {
         TicketDetails.Request request = new TicketDetails.Request();
         request.setTicketNumber(ticketNumber);
 
         CompletableFuture<Message> future = agentServer.send(request);
-        future.thenAcceptAsync(response -> messageHandlerFactory.handle(response, slackChannel));
+        future.thenAcceptAsync(response -> messageHandlerFactory.handle(response, slackChannel, placeholderTimestamp));
     }
 
     // ===== Main =====

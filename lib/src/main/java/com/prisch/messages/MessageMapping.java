@@ -15,6 +15,10 @@ public interface MessageMapping {
     }
 
     static Class<? extends Message> responseMappingFor(String input) {
+        if (input.contains(FailureResponse.class.getName())) {
+            return FailureResponse.class;
+        }
+
         if (input.contains(TicketDetails.class.getName())) {
             return TicketDetails.Response.class;
         }

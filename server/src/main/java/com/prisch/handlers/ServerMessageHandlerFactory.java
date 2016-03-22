@@ -4,7 +4,9 @@ import com.prisch.messages.FailureResponse;
 import com.prisch.messages.Message;
 import com.prisch.messages.TicketDetails;
 import com.ullink.slack.simpleslackapi.SlackChannel;
+import com.ullink.slack.simpleslackapi.SlackMessageHandle;
 import com.ullink.slack.simpleslackapi.SlackSession;
+import com.ullink.slack.simpleslackapi.replies.SlackMessageReply;
 
 public class ServerMessageHandlerFactory {
 
@@ -14,7 +16,7 @@ public class ServerMessageHandlerFactory {
         this.slackSession = slackSession;
     }
 
-    public void handle(Message response, SlackChannel slackChannel) {
+    public void handle(Message response, SlackChannel slackChannel, String placeholderHandle) {
         String slackMessage;
         if (response instanceof FailureResponse) {
             slackMessage = ((FailureResponse)response).getMessage();
@@ -24,7 +26,7 @@ public class ServerMessageHandlerFactory {
             throw new IllegalStateException("Unknown message: " + response.getClass().getName());
         }
 
-        slackSession.sendMessage(slackChannel, slackMessage, null);
+        slackSession.updateMessage(placeholderHandle, slackChannel, slackMessage);
     }
 
 }
