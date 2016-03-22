@@ -4,11 +4,11 @@ import com.prisch.messages.Message;
 import com.prisch.messages.TicketDetails;
 import com.prisch.sbm.SBMService;
 
-public class MessageHandlerFactory {
+public class ClientMessageHandlerFactory {
 
     private final SBMService sbmService;
 
-    public MessageHandlerFactory(SBMService sbmService) {
+    public ClientMessageHandlerFactory(SBMService sbmService) {
         this.sbmService = sbmService;
     }
 

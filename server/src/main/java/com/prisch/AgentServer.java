@@ -1,6 +1,7 @@
 package com.prisch;
 
 import com.google.gson.Gson;
+import com.prisch.messages.FailureResponse;
 import com.prisch.messages.Message;
 import com.prisch.messages.MessageMapping;
 import com.prisch.messages.NoContentMessage;
@@ -23,7 +24,7 @@ public class AgentServer extends NanoHTTPD {
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentServer.class);
     private static final Gson GSON = new Gson();
 
-    private Map<Integer, CompletableFuture<Message>> futureMap = new HashMap<>();
+    private Map<Integer, CompletableFuture<Message>> futureMap = new ConcurrentHashMap<>();
     private BlockingQueue<Message> messageQueue = new ArrayBlockingQueue<>(5);
     private AtomicInteger messageCount = new AtomicInteger();
 
@@ -40,23 +41,24 @@ public class AgentServer extends NanoHTTPD {
         LOGGER.info("Server running on " + getHostname() + ":" + getListeningPort());
     }
 
+    // TODO: The messageQueue can grow unbounded if the futures are never resolved
     public CompletableFuture<Message> send(Message message) {
-        if (!isConnected()) {
-            LOGGER.error("The client isn't connected, so unable to send the message.");
-            return null; // TODO
-        }
-
-        message.setId(messageCount.addAndGet(1));
-
         CompletableFuture<Message> future = new CompletableFuture<>();
-        futureMap.put(message.getId(), future);
 
-        if (messageQueue.offer(message)) {
-            return future;
+        if (isConnected()) {
+            message.setId(messageCount.addAndGet(1));
+            futureMap.put(message.getId(), future);
+
+            if (!messageQueue.offer(message)) {
+                LOGGER.error("The message queue is full.");
+                future.complete(new FailureResponse("Sorry, I can't talk to the agent at the moment."));
+            }
         } else {
-            LOGGER.error("The message queue is full.");
-            return null; // TODO
+            LOGGER.error("The client isn't connected, so unable to send the message.");
+            future.complete(new FailureResponse("Sorry, I can't talk to the agent at the moment."));
         }
+
+        return future;
     }
 
     // ===== HTTP Handlers =====
@@ -102,7 +104,7 @@ public class AgentServer extends NanoHTTPD {
         Message message = GSON.fromJson(messageJson, messageClass);
 
         if (futureMap.containsKey(message.getId())) {
-            futureMap.get(message.getId()).complete(message);
+            futureMap.remove(message.getId()).complete(message);
         }
 
         return newFixedLengthResponse("Successfully parsed result.");

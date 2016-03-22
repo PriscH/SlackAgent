@@ -21,7 +21,14 @@ public class TicketDetailsHandler {
 
         if (itemResult.isSuccess()) {
             TicketDetails.Response response = new TicketDetails.Response();
-            response.setSubject(itemResult.get().getTitle().getValue());
+
+            response.setTicketNumber(itemResult.get().getId().getValue().getDisplayName().getValue());
+            response.setType(itemResult.get().getItemType().getValue());
+            response.setTitle(itemResult.get().getTitle().getValue());
+            response.setDescription(itemResult.get().getDescription().getValue());
+            response.setState(itemResult.get().getState().getValue().getDisplayName().getValue());
+            response.setUrl(itemResult.get().getUrl().getValue());
+
             return response;
         } else {
             return new FailureResponse(itemResult.getMessage());

@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import com.prisch.handlers.MessageHandlerFactory;
+import com.prisch.handlers.ClientMessageHandlerFactory;
 import com.prisch.messages.Message;
 import com.prisch.messages.MessageMapping;
 import org.apache.http.HttpHost;
@@ -13,8 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 
 public class AgentClient {
 
@@ -22,11 +21,9 @@ public class AgentClient {
     private static final Gson GSON = new Gson();
 
     private final String serverAddress;
-    private final MessageHandlerFactory messageHandlerFactory;
+    private final ClientMessageHandlerFactory messageHandlerFactory;
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
-
-    public AgentClient(String serverAddress, Optional<HttpHost> proxy, MessageHandlerFactory messageHandlerFactory) throws URISyntaxException {
+    public AgentClient(String serverAddress, Optional<HttpHost> proxy, ClientMessageHandlerFactory messageHandlerFactory) throws URISyntaxException {
         this.serverAddress = serverAddress;
         this.messageHandlerFactory = messageHandlerFactory;
 
@@ -44,7 +41,7 @@ public class AgentClient {
             try {
                 HttpResponse<String> response = Unirest.get(serverAddress).asString();
                 if (!MessageMapping.hasNoContent(response.getBody())) {
-                    executor.submit(new CommandHandler(response.getBody()));
+                    ForkJoinPool.commonPool().submit(new CommandHandler(response.getBody()));
                 }
             } catch (UnirestException ex) {
                 LOGGER.error(ex.getMessage(), ex);

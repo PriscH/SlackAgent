@@ -1,6 +1,6 @@
 package com.prisch;
 
-import com.prisch.handlers.MessageHandlerFactory;
+import com.prisch.handlers.ClientMessageHandlerFactory;
 import com.prisch.sbm.SBMService;
 import org.apache.http.HttpHost;
 import java.io.IOException;
@@ -14,7 +14,7 @@ public class Agent {
     public static void main(String[] args) throws Exception {
         Properties properties = loadProperties();
         SBMService sbmService = initializeSBMService(properties);
-        MessageHandlerFactory messageHandlerFactory = new MessageHandlerFactory(sbmService);
+        ClientMessageHandlerFactory messageHandlerFactory = new ClientMessageHandlerFactory(sbmService);
 
         AgentClient agentClient = buildAgentClient(properties, messageHandlerFactory);
         agentClient.connect();
@@ -46,7 +46,7 @@ public class Agent {
         return service;
     }
 
-    private static AgentClient buildAgentClient(Properties properties, MessageHandlerFactory messageHandlerFactory) throws URISyntaxException {
+    private static AgentClient buildAgentClient(Properties properties, ClientMessageHandlerFactory messageHandlerFactory) throws URISyntaxException {
         String serverAddress = properties.getProperty("server.address");
         String proxyHost = properties.getProperty("proxy.host");
         String proxyPort = properties.getProperty("proxy.port");
