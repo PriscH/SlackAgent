@@ -30,7 +30,7 @@ public class AgentClient {
         Unirest.setTimeouts(5000L, 120000L);
         if (proxy.isPresent()) {
             Unirest.setProxy(proxy.get());
-            LOGGER.info("Connecting via proxy at " + proxy.get().getAddress().getHostAddress());
+            LOGGER.info("Connecting via proxy at " + proxy.get().getHostName() + ":" + proxy.get().getPort());
         }
     }
 
