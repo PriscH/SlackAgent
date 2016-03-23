@@ -16,7 +16,7 @@ public class ServerMessageHandlerFactory {
         this.slackSession = slackSession;
     }
 
-    public void handle(Message response, SlackChannel slackChannel, String placeholderHandle) {
+    public void handle(Message response, SlackChannel slackChannel) {
         String slackMessage;
         if (response instanceof FailureResponse) {
             slackMessage = ((FailureResponse)response).getMessage();
@@ -26,7 +26,7 @@ public class ServerMessageHandlerFactory {
             throw new IllegalStateException("Unknown message: " + response.getClass().getName());
         }
 
-        slackSession.updateMessage(placeholderHandle, slackChannel, slackMessage);
+        slackSession.sendMessage(slackChannel, slackMessage, null);
     }
 
 }
