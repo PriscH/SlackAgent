@@ -17,6 +17,9 @@ import java.util.concurrent.ForkJoinPool;
 
 public class AgentClient {
 
+    private static final String CACHE_CONTROL_HEADER = "cache-control";
+    private static final String CACHE_CONTROL_VALUE = "private, max-age=0, no-cache";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AgentClient.class);
     private static final Gson GSON = new Gson();
 
@@ -47,7 +50,10 @@ public class AgentClient {
 
         while (true) {
             try {
-                HttpResponse<String> response = Unirest.get(serverAddress).asString();
+                HttpResponse<String> response = Unirest.get(serverAddress)
+                                                       .header(CACHE_CONTROL_HEADER, CACHE_CONTROL_VALUE)
+                                                       .asString();
+
                 if (!MessageMapping.hasNoContent(response.getBody())) {
                     ForkJoinPool.commonPool().submit(new CommandHandler(response.getBody()));
                 }
