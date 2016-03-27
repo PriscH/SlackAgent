@@ -4,10 +4,16 @@ import com.prisch.messages.FailureResponse;
 import com.prisch.messages.Message;
 import com.prisch.messages.TicketDetails;
 import com.prisch.sbm.SBMService;
+import com.prisch.sbm.stubs.FieldValue;
+import com.prisch.sbm.stubs.NameValue;
 import com.prisch.sbm.stubs.TTItem;
 import com.prisch.util.Result;
 
+import java.util.Optional;
+
 public class TicketDetailsRequestHandler {
+
+    private static final String ASSIGNEE_FIELD = "L3_PRIMARY_CONTACT_USER";
 
     private final SBMService sbmService;
 
@@ -28,6 +34,13 @@ public class TicketDetailsRequestHandler {
             response.setDescription(itemResult.get().getDescription().getValue());
             response.setState(itemResult.get().getState().getValue().getDisplayName().getValue());
             response.setUrl(itemResult.get().getUrl().getValue());
+
+            Optional<NameValue> assigneeField = itemResult.get().getExtendedField().stream()
+                                                                                   .filter(field -> field.getId().getValue().getDbName().getValue().equals(ASSIGNEE_FIELD))
+                                                                                   .findFirst();
+            assigneeField.ifPresent(field ->
+                field.getValue().stream().findFirst().ifPresent(value -> response.setAssignee(value.getDisplayValue().getValue()))
+            );
 
             return response;
         } else {

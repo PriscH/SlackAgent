@@ -6,6 +6,7 @@ import com.ullink.slack.simpleslackapi.SlackSession;
 
 import static com.prisch.slack.SlackFormatter.bold;
 import static com.prisch.slack.SlackFormatter.escape;
+import static com.prisch.slack.SlackFormatter.italics;
 
 public class TicketDetailsResponseHandler {
 
@@ -20,7 +21,14 @@ public class TicketDetailsResponseHandler {
     public void process(TicketDetails.Response response) {
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append(String.format("%s (%s)\n", bold(escape(response.getTitle())), response.getState()));
+        stringBuilder.append(String.format("%s: %s (%s)\n", response.getTicketNumber(), bold(escape(response.getTitle())), response.getState()));
+
+        if (response.getAssignee().isPresent()) {
+            stringBuilder.append(italics(String.format("Assigned to %s", response.getAssignee().get())));
+        } else {
+            stringBuilder.append(italics("Not assigned to L3"));
+        }
+
         stringBuilder.append(String.format("```%s```\n", escape(response.getDescription())));
         stringBuilder.append(String.format("`%s`", escape(response.getUrl())));
 

@@ -1,5 +1,7 @@
 package com.prisch.messages;
 
+import java.util.Optional;
+
 public abstract class TicketDetails {
 
     public static final class Request extends Message {
@@ -23,6 +25,8 @@ public abstract class TicketDetails {
         private String description;
         private String state;
         private String url;
+
+        private String assignee;
 
         public String getTicketNumber() {
             return ticketNumber;
@@ -70,6 +74,14 @@ public abstract class TicketDetails {
 
         public void setUrl(String url) {
             this.url = url;
+        }
+
+        public Optional<String> getAssignee() {
+            return Optional.ofNullable(assignee);
+        }
+
+        public void setAssignee(String assignee) {
+            this.assignee = assignee;
         }
     }
 }
