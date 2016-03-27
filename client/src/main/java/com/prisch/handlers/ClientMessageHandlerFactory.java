@@ -15,7 +15,7 @@ public class ClientMessageHandlerFactory {
     public Message handle(Message request) {
         Message response;
         if (request instanceof TicketDetails.Request) {
-            response = new TicketDetailsHandler(sbmService).process((TicketDetails.Request)request);
+            response = new TicketDetailsRequestHandler(sbmService).process((TicketDetails.Request)request);
         } else {
             throw new IllegalStateException("Unknown message: " + request.getClass().getName());
         }

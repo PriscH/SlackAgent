@@ -1,5 +1,6 @@
-package com.prisch;
+package com.prisch.slack;
 
+import com.prisch.Bot;
 import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
 import com.ullink.slack.simpleslackapi.listeners.SlackMessagePostedListener;
@@ -14,7 +15,6 @@ public class SlackDirectMessageListener implements SlackMessagePostedListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(SlackDirectMessageListener.class);
 
     private static final Pattern TICKET_PATTERN = Pattern.compile("[a-zA-Z]{3}[0-9]{6}");
-    private static final String TIMESTAMP_KEY = "ts";
 
     private final Bot bot;
 

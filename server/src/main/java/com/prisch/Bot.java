@@ -1,6 +1,7 @@
 package com.prisch;
 
 import com.prisch.handlers.ServerMessageHandlerFactory;
+import com.prisch.slack.SlackDirectMessageListener;
 import com.prisch.messages.Message;
 import com.prisch.messages.TicketDetails;
 import com.ullink.slack.simpleslackapi.SlackChannel;

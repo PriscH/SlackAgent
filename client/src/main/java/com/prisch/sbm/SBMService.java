@@ -12,6 +12,8 @@ public class SBMService {
 
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(SBMService.class);
 
+    private static final String UNAUTHORIZED_MESSAGE_PORTION = "does not have the privilege";
+
     private final ObjectFactory factory = new ObjectFactory();
     private final Sbmappservices72 service = new Sbmappservices72(Sbmappservices72.SBMAPPSERVICES72_WSDL_LOCATION, Sbmappservices72.SBMAPPSERVICES72_QNAME);
     private final Sbmappservices72PortType port = service.getSbmappservices72();
@@ -50,6 +52,10 @@ public class SBMService {
 
             return Result.success(items.getItem().get(0));
         } catch (AEWebservicesFaultFault ex) {
+            if (ex.getMessage().contains(UNAUTHORIZED_MESSAGE_PORTION)) {
+                return Result.failure("Sorry, I do not have access to ticket with ID" + ticketNumber);
+            }
+
             LOGGER.error(ex.getMessage(), ex);
             return Result.failure("Sorry, I can't talk to SBM at this moment.");
         }

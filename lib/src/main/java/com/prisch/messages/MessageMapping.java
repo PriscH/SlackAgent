@@ -3,7 +3,7 @@ package com.prisch.messages;
 public interface MessageMapping {
 
     static boolean hasNoContent(String input) {
-        return input.contains(NoContentMessage.IDENTIFIER);
+        return input.contains(NoContentMessage.class.getName());
     }
 
     static Class<? extends Message> requestMappingFor(String input) {

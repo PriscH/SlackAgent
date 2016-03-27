@@ -7,11 +7,11 @@ import com.prisch.sbm.SBMService;
 import com.prisch.sbm.stubs.TTItem;
 import com.prisch.util.Result;
 
-public class TicketDetailsHandler {
+public class TicketDetailsRequestHandler {
 
     private final SBMService sbmService;
 
-    public TicketDetailsHandler(SBMService sbmService) {
+    public TicketDetailsRequestHandler(SBMService sbmService) {
         this.sbmService = sbmService;
     }
 
