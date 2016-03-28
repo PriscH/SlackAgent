@@ -3,8 +3,8 @@ package com.prisch.handlers;
 import com.prisch.messages.FailureResponse;
 import com.prisch.messages.Message;
 import com.prisch.messages.TicketDetails;
+import com.prisch.slack.SlackSession;
 import com.ullink.slack.simpleslackapi.SlackChannel;
-import com.ullink.slack.simpleslackapi.SlackSession;
 
 public class ServerMessageHandlerFactory {
 

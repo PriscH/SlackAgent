@@ -4,8 +4,8 @@ import com.prisch.messages.FailureResponse;
 import com.prisch.messages.Message;
 import com.prisch.messages.TicketDetails;
 import com.prisch.sbm.SBMService;
-import com.prisch.sbm.stubs.FieldValue;
 import com.prisch.sbm.stubs.NameValue;
+import com.prisch.sbm.stubs.Note;
 import com.prisch.sbm.stubs.TTItem;
 import com.prisch.util.Result;
 
@@ -35,16 +35,37 @@ public class TicketDetailsRequestHandler {
             response.setState(itemResult.get().getState().getValue().getDisplayName().getValue());
             response.setUrl(itemResult.get().getUrl().getValue());
 
-            Optional<NameValue> assigneeField = itemResult.get().getExtendedField().stream()
-                                                                                   .filter(field -> field.getId().getValue().getDbName().getValue().equals(ASSIGNEE_FIELD))
-                                                                                   .findFirst();
-            assigneeField.ifPresent(field ->
-                field.getValue().stream().findFirst().ifPresent(value -> response.setAssignee(value.getDisplayValue().getValue()))
-            );
+            addAssignee(response, itemResult.get());
+            if (ticketDetailsRequest.isNotesIncluded()) {
+                addNotes(response, itemResult.get());
+            }
 
             return response;
         } else {
             return new FailureResponse(itemResult.getMessage());
+        }
+    }
+
+    private void addAssignee(TicketDetails.Response response, TTItem ticket) {
+        Optional<NameValue> assigneeField = ticket.getExtendedField().stream()
+                                                  .filter(field -> field.getId().getValue().getDbName().getValue().equals(ASSIGNEE_FIELD))
+                                                  .findFirst();
+
+        assigneeField.ifPresent(field ->
+            field.getValue().stream().findFirst().ifPresent(value -> response.setAssignee(value.getDisplayValue().getValue()))
+        );
+    }
+
+    private void addNotes(TicketDetails.Response response, TTItem ticket) {
+        for (Note ticketNote : ticket.getNote()) {
+            TicketDetails.Note responseNote = new TicketDetails.Note();
+
+            responseNote.setTitle(ticketNote.getTitle().getValue());
+            responseNote.setText(ticketNote.getNote().getValue());
+            responseNote.setAuthor(ticketNote.getAuthor().getValue().getDisplayName().getValue());
+            responseNote.setModifiedDateTime(ticketNote.getModificationDateTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime());
+
+            response.getNotes().add(responseNote);
         }
     }
 }

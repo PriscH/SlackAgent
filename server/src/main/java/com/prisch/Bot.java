@@ -1,11 +1,10 @@
 package com.prisch;
 
 import com.prisch.handlers.ServerMessageHandlerFactory;
-import com.prisch.slack.SlackDirectMessageListener;
 import com.prisch.messages.Message;
-import com.prisch.messages.TicketDetails;
+import com.prisch.slack.SlackDirectMessageListener;
+import com.prisch.slack.SlackSession;
 import com.ullink.slack.simpleslackapi.SlackChannel;
-import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
 
 import java.io.InputStream;
@@ -20,7 +19,7 @@ public class Bot {
 
     private Bot(String serverHost, int serverPort, String slackToken) {
         agentServer = new AgentServer(serverHost, serverPort);
-        slackSession = SlackSessionFactory.createWebSocketSlackSession(slackToken);
+        slackSession = SlackSession.wrap(SlackSessionFactory.createWebSocketSlackSession(slackToken));
         messageHandlerFactory = new ServerMessageHandlerFactory(slackSession);
     }
 
@@ -33,10 +32,7 @@ public class Bot {
 
     // ===== Interface =====
 
-    public void handleTicketDetails(String ticketNumber, SlackChannel slackChannel) {
-        TicketDetails.Request request = new TicketDetails.Request();
-        request.setTicketNumber(ticketNumber);
-
+    public void sendRequest(Message request, SlackChannel slackChannel) {
         CompletableFuture<Message> future = agentServer.send(request);
         future.thenAcceptAsync(response -> messageHandlerFactory.handle(response, slackChannel));
     }

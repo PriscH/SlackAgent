@@ -1,12 +1,16 @@
 package com.prisch.handlers;
 
+import com.prisch.formatters.Formatters;
 import com.prisch.messages.TicketDetails;
+import com.prisch.slack.SlackAttachment;
+import com.prisch.slack.SlackSession;
 import com.ullink.slack.simpleslackapi.SlackChannel;
-import com.ullink.slack.simpleslackapi.SlackSession;
 
-import static com.prisch.slack.SlackFormatter.bold;
-import static com.prisch.slack.SlackFormatter.escape;
-import static com.prisch.slack.SlackFormatter.italics;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.prisch.slack.SlackFormatter.*;
 
 public class TicketDetailsResponseHandler {
 
@@ -21,7 +25,7 @@ public class TicketDetailsResponseHandler {
     public void process(TicketDetails.Response response) {
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append(String.format("%s: %s (%s)\n", response.getTicketNumber(), bold(escape(response.getTitle())), response.getState()));
+        stringBuilder.append(String.format("%s: %s (%s)\n", response.getTicketNumber(), bold(response.getTitle()), response.getState()));
 
         if (response.getAssignee().isPresent()) {
             stringBuilder.append(italics(String.format("Assigned to %s", response.getAssignee().get())));
@@ -29,11 +33,34 @@ public class TicketDetailsResponseHandler {
             stringBuilder.append(italics("Not assigned to L3"));
         }
 
-        stringBuilder.append(String.format("```%s```\n", escape(response.getDescription())));
-        stringBuilder.append(String.format("`%s`", escape(response.getUrl())));
+        stringBuilder.append(block(response.getDescription()) + "\n");
+        stringBuilder.append(inline(response.getUrl()) + "\n");
 
-        String slackMessage = stringBuilder.toString();
-        slackSession.sendMessage(slackChannel, slackMessage, null);
+        List<SlackAttachment> attachments = new LinkedList<>();
+        if (!response.getNotes().isEmpty()) {
+            attachments = buildNoteAttachments(response.getNotes());
+        }
+
+        String slackMessage = escape(stringBuilder.toString());
+        slackSession.sendMessage(slackChannel, slackMessage, attachments);
+    }
+
+    private List<SlackAttachment> buildNoteAttachments(List<TicketDetails.Note> notes) {
+        notes.sort((a, b) -> a.getModifiedDateTime().compareTo(b.getModifiedDateTime()));
+        return notes.stream().map(this::noteToAttachment).collect(Collectors.toList());
+    }
+
+    private SlackAttachment noteToAttachment(TicketDetails.Note note) {
+        SlackAttachment slackAttachment = new SlackAttachment();
+
+        slackAttachment.setTitle(note.getTitle());
+        slackAttachment.setAuthorName(String.format("%s on %s", note.getAuthor(), note.getModifiedDateTime().format(Formatters.DATE_TIME)));
+
+        if (!note.getText().trim().isEmpty()) {
+            slackAttachment.setText(note.getText());
+        }
+
+        return slackAttachment;
     }
 
 }

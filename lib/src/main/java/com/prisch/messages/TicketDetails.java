@@ -1,5 +1,8 @@
 package com.prisch.messages;
 
+import java.time.LocalDateTime;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 
 public abstract class TicketDetails {
@@ -7,6 +10,7 @@ public abstract class TicketDetails {
     public static final class Request extends Message {
 
         private String ticketNumber;
+        private boolean notesIncluded;
 
         public String getTicketNumber() {
             return ticketNumber;
@@ -14,6 +18,14 @@ public abstract class TicketDetails {
 
         public void setTicketNumber(String ticketNumber) {
             this.ticketNumber = ticketNumber;
+        }
+
+        public boolean isNotesIncluded() {
+            return notesIncluded;
+        }
+
+        public void setNotesIncluded(boolean notesIncluded) {
+            this.notesIncluded = notesIncluded;
         }
     }
 
@@ -27,6 +39,7 @@ public abstract class TicketDetails {
         private String url;
 
         private String assignee;
+        private List<Note> notes = new LinkedList<>();
 
         public String getTicketNumber() {
             return ticketNumber;
@@ -82,6 +95,54 @@ public abstract class TicketDetails {
 
         public void setAssignee(String assignee) {
             this.assignee = assignee;
+        }
+
+        public List<Note> getNotes() {
+            return notes;
+        }
+
+        public void setNotes(List<Note> notes) {
+            this.notes = notes;
+        }
+    }
+
+    public static final class Note {
+
+        private String title;
+        private String text;
+        private String author;
+        private LocalDateTime modifiedDateTime;
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+
+        public String getAuthor() {
+            return author;
+        }
+
+        public void setAuthor(String author) {
+            this.author = author;
+        }
+
+        public LocalDateTime getModifiedDateTime() {
+            return modifiedDateTime;
+        }
+
+        public void setModifiedDateTime(LocalDateTime modifiedDateTime) {
+            this.modifiedDateTime = modifiedDateTime;
         }
     }
 }

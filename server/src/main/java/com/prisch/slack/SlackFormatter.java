@@ -10,6 +10,14 @@ public interface SlackFormatter {
         return String.format("_%s_", message);
     }
 
+    static String inline(String message) {
+        return String.format("`%s`", message);
+    }
+
+    static String block(String message) {
+        return String.format("```%s```", message);
+    }
+
     static String escape(String message) {
         return message.replace("&", "&amp;")
                       .replace("<", "&lt;")
