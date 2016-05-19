@@ -3,6 +3,7 @@ package com.prisch.parsers;
 import com.prisch.factories.RequestFactory;
 import com.prisch.messages.Message;
 import com.prisch.responders.ChangelogResponder;
+import com.prisch.responders.HelpResponder;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.tokensregex.Env;
@@ -42,6 +43,7 @@ public class SlackMessageParser {
     private static final TokenSequencePattern TICKET_DETAILS_WITH_NOTES_PATTERN = TokenSequencePattern.compile(MATCHER_ENVIRONMENT, "($TICKET_DETAILS | $TICKET) $WITH_NOTES");
 
     private static final TokenSequencePattern CHANGELOG_PATTERN = TokenSequencePattern.compile(MATCHER_ENVIRONMENT, "/show|display/ changelog");
+    private static final TokenSequencePattern HELP_PATTERN = TokenSequencePattern.compile(MATCHER_ENVIRONMENT, "help");
 
     public static ParsedResult parse(String message) {
         Annotation corpus = new Annotation(message);
@@ -62,6 +64,8 @@ public class SlackMessageParser {
         } else {
             if (CHANGELOG_PATTERN.matcher(tokens).matches()) {
                 return ParsedResult.with(new ChangelogResponder());
+            } else if (HELP_PATTERN.matcher(tokens).matches()) {
+                return ParsedResult.with(new HelpResponder());
             }
         }
 

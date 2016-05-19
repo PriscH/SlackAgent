@@ -36,9 +36,9 @@ public class ChangelogResponder implements Responder {
         Constructor changelogConstructor = new Constructor(Changelog.class);
         changelogConstructor.addTypeDescription(new TypeDescription(Release.class));
 
-        try (final InputStream changelogstream = ChangelogResponder.class.getResourceAsStream("/changelog.yaml")) {
+        try (final InputStream changelogStream = ChangelogResponder.class.getResourceAsStream("/changelog.yaml")) {
             Yaml yaml = new Yaml(changelogConstructor);
-            Changelog changelog = (Changelog)yaml.load(changelogstream);
+            Changelog changelog = (Changelog)yaml.load(changelogStream);
 
             if (!changelog.getReleases().isEmpty()) {
                 return Optional.of(changelog.getReleases().get(0));
