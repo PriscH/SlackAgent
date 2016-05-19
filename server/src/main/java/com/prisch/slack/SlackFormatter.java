@@ -23,4 +23,8 @@ public interface SlackFormatter {
                       .replace("<", "&lt;")
                       .replace(">", "&gt;");
     }
+
+    static String newline() {
+        return "\n";
+    }
 }
