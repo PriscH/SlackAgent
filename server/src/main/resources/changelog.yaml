@@ -1,0 +1,7 @@
+releases:
+  - version: v1.1
+    changes:
+      - Improvements to the formatting of notes, especially the way authors are displayed
+      - Parsing of HTML to Markdown for the notes
+      - Keeping record of a changelog
+      - A basic help feature

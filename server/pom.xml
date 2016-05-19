@@ -91,6 +91,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.17</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.ullink.slack</groupId>
             <artifactId>simpleslackapi</artifactId>
             <version>0.5.0</version>

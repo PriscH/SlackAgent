@@ -2,6 +2,7 @@ package com.prisch.parsers;
 
 import com.prisch.factories.RequestFactory;
 import com.prisch.messages.Message;
+import com.prisch.responders.ChangelogResponder;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.tokensregex.Env;
@@ -40,7 +41,9 @@ public class SlackMessageParser {
     private static final TokenSequencePattern TICKET_DETAILS_PATTERN = TokenSequencePattern.compile(MATCHER_ENVIRONMENT, "$TICKET_DETAILS");
     private static final TokenSequencePattern TICKET_DETAILS_WITH_NOTES_PATTERN = TokenSequencePattern.compile(MATCHER_ENVIRONMENT, "($TICKET_DETAILS | $TICKET) $WITH_NOTES");
 
-    public static Optional<Message> parse(String message) {
+    private static final TokenSequencePattern CHANGELOG_PATTERN = TokenSequencePattern.compile(MATCHER_ENVIRONMENT, "/show|display/ changelog");
+
+    public static ParsedResult parse(String message) {
         Annotation corpus = new Annotation(message);
         PIPELINE.annotate(corpus);
         List<CoreLabel> tokens = corpus.get(CoreAnnotations.TokensAnnotation.class);
@@ -50,14 +53,18 @@ public class SlackMessageParser {
             String ticketNumber = ticketMatcher.group().toUpperCase();
 
             if (tokens.size() == 1) {
-                return Optional.of(RequestFactory.buildTicketDetailsRequest(ticketNumber));
+                return ParsedResult.with(RequestFactory.buildTicketDetailsRequest(ticketNumber));
             } else if (TICKET_DETAILS_WITH_NOTES_PATTERN.matcher(tokens).matches()) {
-                return Optional.of(RequestFactory.buildTicketDetailsWithNotesRequest(ticketNumber));
+                return ParsedResult.with(RequestFactory.buildTicketDetailsWithNotesRequest(ticketNumber));
             } else if (TICKET_DETAILS_PATTERN.matcher(tokens).matches()) {
-                return Optional.of(RequestFactory.buildTicketDetailsRequest(ticketNumber));
+                return ParsedResult.with(RequestFactory.buildTicketDetailsRequest(ticketNumber));
+            }
+        } else {
+            if (CHANGELOG_PATTERN.matcher(tokens).matches()) {
+                return ParsedResult.with(new ChangelogResponder());
             }
         }
 
-        return Optional.empty();
+        return ParsedResult.empty();
     }
 }

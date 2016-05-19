@@ -30,6 +30,10 @@ public class SlackSession implements com.ullink.slack.simpleslackapi.SlackSessio
 
     // ===== Extension =====
 
+    public SlackMessageHandle<SlackMessageReply> sendMessage(SlackChannel channel, String message) {
+        return delegate.sendMessage(channel, message, null);
+    }
+
     public SlackMessageHandle<GenericSlackReply> sendMessage(SlackChannel channel, String message, Collection<? extends SlackAttachment> attachments) {
         Map<String, String> arguments = new HashMap<>();
         

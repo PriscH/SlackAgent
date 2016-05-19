@@ -1,17 +1,13 @@
 package com.prisch.slack;
 
 import com.prisch.Bot;
-import com.prisch.messages.Message;
+import com.prisch.parsers.ParsedResult;
 import com.prisch.parsers.SlackMessageParser;
 import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
 import com.ullink.slack.simpleslackapi.listeners.SlackMessagePostedListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class SlackDirectMessageListener implements SlackMessagePostedListener {
 
@@ -24,14 +20,18 @@ public class SlackDirectMessageListener implements SlackMessagePostedListener {
     }
 
     @Override
-    public void onEvent(SlackMessagePosted event, SlackSession slackSession) {
+    public void onEvent(SlackMessagePosted event, SlackSession rawSlackSession) {
+        com.prisch.slack.SlackSession slackSession = com.prisch.slack.SlackSession.wrap(rawSlackSession);
+
         try {
             if (event.getChannel().isDirect() && !event.getSender().isBot()) {
-                Optional<Message> request = SlackMessageParser.parse(event.getMessageContent());
-                if (request.isPresent()) {
-                    bot.sendRequest(request.get(), event.getChannel());
+                ParsedResult result = SlackMessageParser.parse(event.getMessageContent());
+                if (result.hasResponder()) {
+                    result.getResponder().respond(slackSession, event.getChannel());
+                } else if (result.hasMessage()) {
+                    bot.sendRequest(result.getMessage(), event.getChannel());
                 } else {
-                    slackSession.sendMessage(event.getChannel(), "Sorry, my vocabulary and abilities are still very limited. Please give me a valid ticket number and I'll find it for you.", null);
+                    slackSession.sendMessage(event.getChannel(), "Sorry, my vocabulary and abilities are still very limited. Please give me a valid ticket number and I'll find it for you.");
                 }
             }
         } catch (RuntimeException ex) {
