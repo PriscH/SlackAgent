@@ -1,0 +1,4 @@
+$SHOW_TICKET = "/show|display/ $TICKET"
+
+{( $SHOW_TICKET ) => "SHOW_TICKET"}
+{( ($SHOW_TICKET | $TICKET) /with|and|&/ /note[s]?/ ) => "SHOW_TICKET_WITH_NOTES"}

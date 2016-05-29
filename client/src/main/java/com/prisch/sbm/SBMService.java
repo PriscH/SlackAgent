@@ -2,11 +2,9 @@ package com.prisch.sbm;
 
 import com.prisch.sbm.stubs.*;
 import com.prisch.util.Result;
-import org.apache.log4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.ws.BindingProvider;
-import java.math.BigInteger;
 import java.util.Optional;
 
 public class SBMService {
@@ -46,7 +44,7 @@ public class SBMService {
 
         String query = String.format(QUERY, ticketNumber.substring(3)); // SBM only cares about the number, not the designator (for example ENH)
         try {
-            TTItemList items = port.getItemsByQuery(auth, tableIdentifier, query, null, null, new BigInteger("100"), null);
+            TTItemList items = port.getItemsByQuery(auth, tableIdentifier, query, null, null, null, null);
             if (items.getItem().size() != 1) {
                 return Result.failure("Sorry, I could not find a ticket with ID " + ticketNumber);
             }

@@ -1,0 +1,5 @@
+$TICKET     = "/[a-z]{3}[0-9]{6}/"
+$USER_REF   = "(?m){4} /<@[0-9]{9}>/"
+
+{( $TICKET ) => "TICKET"}
+{( $USER_REF ) => "USER_REF"}
