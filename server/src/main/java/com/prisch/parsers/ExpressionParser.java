@@ -4,38 +4,45 @@ import com.prisch.factories.RequestFactory;
 import com.prisch.responders.ChangelogResponder;
 import com.prisch.responders.HelpResponder;
 
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public enum ExpressionParser {
 
-    TICKET (expression -> {
+    TICKET ((expression, senderName) -> {
         String ticketNumber = extractTicketNumber(expression);
         return ParsedResult.with(RequestFactory.buildTicketDetailsRequest(ticketNumber));
     }),
 
-    HELP (expression -> ParsedResult.with(new HelpResponder())),
-    SHOW_CHANGELOG (expression -> ParsedResult.with(new ChangelogResponder())),
+    HELP ((expression, senderName) -> ParsedResult.with(new HelpResponder())),
+    SHOW_CHANGELOG ((expression, senderName) -> ParsedResult.with(new ChangelogResponder())),
 
-    SHOW_TICKET (expression -> {
+    SHOW_TICKET ((expression, senderName) -> {
         String ticketNumber = extractTicketNumber(expression);
         return ParsedResult.with(RequestFactory.buildTicketDetailsRequest(ticketNumber));
     }),
 
-    SHOW_TICKET_WITH_NOTES (expression -> {
+    SHOW_TICKET_WITH_NOTES ((expression, senderName) -> {
         String ticketNumber = extractTicketNumber(expression);
         return ParsedResult.with(RequestFactory.buildTicketDetailsWithNotesRequest(ticketNumber));
+    }),
+
+    SHARE_TICKET ((expression, senderName) -> {
+        String ticketNumber = extractTicketNumber(expression);
+        String userReference = extractUserReference(expression);
+
+        return ParsedResult.with(RequestFactory.buildTicketDetailsForSharingRequest(ticketNumber, userReference, senderName));
     });
 
-    private final Function<String, ParsedResult>  parseFunction;
+    private final BiFunction<String, String, ParsedResult>  parseFunction;
 
-    ExpressionParser(Function<String, ParsedResult> parseFunction) {
+    ExpressionParser(BiFunction<String, String, ParsedResult> parseFunction) {
         this.parseFunction = parseFunction;
     }
 
-    public ParsedResult parse(String expression) {
-        return parseFunction.apply(expression);
+    public ParsedResult parse(String expression, String senderName) {
+        return parseFunction.apply(expression, senderName);
     }
 
     private static String extractTicketNumber(String expression) {
@@ -49,11 +56,11 @@ public enum ExpressionParser {
     }
 
     private static String extractUserReference(String expression) {
-        final Pattern USER_REF_PATTERN = Pattern.compile("<@[0-9]{9}>");
+        final Pattern USER_REF_PATTERN = Pattern.compile("<@[a-zA-Z0-9]{9}>");
 
         Matcher userRefMatcher = USER_REF_PATTERN.matcher(expression);
         if (userRefMatcher.find()) {
-            return userRefMatcher.group();
+            return userRefMatcher.group().substring(2, 11);
         }
         return "";
     }

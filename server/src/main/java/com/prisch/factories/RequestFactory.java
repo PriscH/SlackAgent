@@ -15,4 +15,11 @@ public interface RequestFactory {
         request.setNotesIncluded(true);
         return request;
     }
+
+    static TicketDetails.Request buildTicketDetailsForSharingRequest(String ticketNumber, String userReference, String senderName) {
+        TicketDetails.Request request = buildTicketDetailsRequest(ticketNumber);
+        request.setUserReference(userReference);
+        request.setSenderName(senderName);
+        return request;
+    }
 }

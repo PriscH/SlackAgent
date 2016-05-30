@@ -1,4 +1,7 @@
 releases:
+  - version: v1.2
+    changes:
+      - User can request to share ticket details with other team members
   - version: v1.1
     changes:
       - Improvements to the formatting of notes, especially the way authors are displayed

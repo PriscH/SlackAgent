@@ -12,6 +12,9 @@ public abstract class TicketDetails {
         private String ticketNumber;
         private boolean notesIncluded;
 
+        private String userReference;
+        private String senderName;
+
         public String getTicketNumber() {
             return ticketNumber;
         }
@@ -27,6 +30,22 @@ public abstract class TicketDetails {
         public void setNotesIncluded(boolean notesIncluded) {
             this.notesIncluded = notesIncluded;
         }
+
+        public Optional<String> getUserReference() {
+            return Optional.ofNullable(userReference);
+        }
+
+        public void setUserReference(String userReference) {
+            this.userReference = userReference;
+        }
+
+        public Optional<String> getSenderName() {
+            return Optional.ofNullable(senderName);
+        }
+
+        public void setSenderName(String senderName) {
+            this.senderName = senderName;
+        }
     }
 
     public static final class Response extends Message {
@@ -40,6 +59,9 @@ public abstract class TicketDetails {
 
         private String assignee;
         private List<Note> notes = new LinkedList<>();
+
+        private String userReference;
+        private String senderName;
 
         public String getTicketNumber() {
             return ticketNumber;
@@ -103,6 +125,22 @@ public abstract class TicketDetails {
 
         public void setNotes(List<Note> notes) {
             this.notes = notes;
+        }
+
+        public Optional<String> getUserReference() {
+            return Optional.ofNullable(userReference);
+        }
+
+        public void setUserReference(String userReference) {
+            this.userReference = userReference;
+        }
+
+        public Optional<String> getSenderName() {
+            return Optional.ofNullable(senderName);
+        }
+
+        public void setSenderName(String senderName) {
+            this.senderName = senderName;
         }
     }
 

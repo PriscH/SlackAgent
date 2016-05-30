@@ -9,11 +9,13 @@ import com.prisch.slack.SlackAttachment;
 import com.prisch.slack.SlackFormatter;
 import com.prisch.slack.SlackSession;
 import com.ullink.slack.simpleslackapi.SlackChannel;
+import com.ullink.slack.simpleslackapi.SlackUser;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.prisch.formatters.Formatters.capitalize;
 import static com.prisch.slack.SlackFormatter.*;
 
 public class TicketDetailsResponseHandler {
@@ -30,6 +32,13 @@ public class TicketDetailsResponseHandler {
 
     public void process(TicketDetails.Response response) {
         StringBuilder stringBuilder = new StringBuilder();
+
+        if (response.getUserReference().isPresent()) {
+            stringBuilder.append(italics(bold(capitalize(response.getSenderName().get()))));
+            stringBuilder.append(" ");
+            stringBuilder.append(italics("asked me to share this ticket with you:"));
+            stringBuilder.append(newline() + newline() + newline());
+        }
 
         stringBuilder.append(String.format("%s: %s (%s)", response.getTicketNumber(), bold(response.getTitle()), response.getState()));
         stringBuilder.append(newline());
@@ -50,7 +59,20 @@ public class TicketDetailsResponseHandler {
         }
 
         String slackMessage = escape(stringBuilder.toString());
-        slackSession.sendMessage(slackChannel, slackMessage, attachments);
+
+        if (response.getUserReference().isPresent()) {
+            SlackUser receiver = slackSession.findUserById(response.getUserReference().get());
+            if (receiver.isBot()) {
+                slackSession.sendMessage(slackChannel, "Sorry, I only talk to humans.");
+            } else {
+                String receiverName = receiver.getRealName().trim().isEmpty() ? receiver.getUserName() : receiver.getRealName();
+
+                slackSession.sendMessageToUser(response.getUserReference().get(), slackMessage);
+                slackSession.sendMessage(slackChannel, String.format("Okay, I shared %s with %s", response.getTicketNumber(), receiverName));
+            }
+        } else {
+            slackSession.sendMessage(slackChannel, slackMessage, attachments);
+        }
     }
 
     private List<SlackAttachment> buildNoteAttachments(List<TicketDetails.Note> notes) {

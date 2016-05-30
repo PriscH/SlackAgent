@@ -40,6 +40,11 @@ public class TicketDetailsRequestHandler {
                 addNotes(response, itemResult.get());
             }
 
+            if (ticketDetailsRequest.getUserReference().isPresent() && ticketDetailsRequest.getSenderName().isPresent()) {
+                response.setUserReference(ticketDetailsRequest.getUserReference().get());
+                response.setSenderName(ticketDetailsRequest.getSenderName().get());
+            }
+
             return response;
         } else {
             return new FailureResponse(itemResult.getMessage());

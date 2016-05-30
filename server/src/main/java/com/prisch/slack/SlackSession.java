@@ -48,6 +48,11 @@ public class SlackSession implements com.ullink.slack.simpleslackapi.SlackSessio
         return delegate.postGenericSlackCommand(arguments, CHAT_POST_MESSAGE_COMMAND);
     }
 
+    public SlackMessageHandle<SlackMessageReply> sendMessageToUser(String userId, String message) {
+        SlackUser slackUser = delegate.findUserById(userId);
+        return delegate.sendMessageToUser(slackUser, message, null);
+    }
+
     // ===== Delegation =====
 
     @Override

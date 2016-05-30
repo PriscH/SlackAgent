@@ -28,7 +28,7 @@ public class SlackMessageParser {
     private static final StanfordCoreNLP PIPELINE = new StanfordCoreNLP(PIPELINE_PROPERTIES);
     private static final CoreMapExpressionExtractor<MatchedExpression> EXPRESSION_EXTRACTOR = CoreMapExpressionExtractor.createExtractorFromFiles(MATCHER_ENVIRONMENT, PATTERN_FILES);
 
-    public static ParsedResult parse(String message) {
+    public static ParsedResult parse(String message, String senderName) {
         Annotation corpus = new Annotation(message);
         PIPELINE.annotate(corpus);
         List<MatchedExpression> expressions = EXPRESSION_EXTRACTOR.extractExpressions(corpus);
@@ -36,7 +36,7 @@ public class SlackMessageParser {
         return expressions.stream().findFirst().flatMap(expression -> {
             return Arrays.stream(ExpressionParser.values()).filter(parser -> parser.toString().equals(expression.getValue().get()))
                                                            .findFirst()
-                                                           .map(parser -> parser.parse(expression.getText()));
+                                                           .map(parser -> parser.parse(expression.getText(), senderName));
         }).orElse(ParsedResult.empty());
     }
 }

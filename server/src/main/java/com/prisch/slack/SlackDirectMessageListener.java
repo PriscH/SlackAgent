@@ -25,7 +25,9 @@ public class SlackDirectMessageListener implements SlackMessagePostedListener {
 
         try {
             if (event.getChannel().isDirect() && !event.getSender().isBot()) {
-                ParsedResult result = SlackMessageParser.parse(event.getMessageContent());
+                String senderName = event.getSender().getRealName().trim().isEmpty() ? event.getSender().getUserName() : event.getSender().getRealName();
+
+                ParsedResult result = SlackMessageParser.parse(event.getMessageContent(), senderName);
                 if (result.hasResponder()) {
                     result.getResponder().respond(slackSession, event.getChannel());
                 } else if (result.hasMessage()) {
