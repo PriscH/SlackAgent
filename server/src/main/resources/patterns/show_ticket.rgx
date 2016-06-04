@@ -1,7 +1,12 @@
-$SHOW_TICKET = "/show|display/ $TICKET"
+$SHOW = "/show|display/"
+$TICKETS = "/ticket[s]?|issue[s]?/";
+$SHOW_TICKET = "$SHOW $TICKET_REF"
 
 {( $SHOW_TICKET ) => "SHOW_TICKET"}
-{( ($SHOW_TICKET | $TICKET) /with|and|&/ /note[s]?/ ) => "SHOW_TICKET_WITH_NOTES"}
+{( ($SHOW_TICKET | $TICKET_REF) /with|and|&/ /note[s]?/ ) => "SHOW_TICKET_WITH_NOTES"}
 
-{( "share" $TICKET "with" $USER_REF ) => "SHARE_TICKET"}
+{( "share" $TICKET_REF "with" $USER_REF ) => "SHARE_TICKET"}
 {( $SHOW_TICKET "to" $USER_REF ) => "SHARE_TICKET"}
+
+{( "my" $TICKETS ) => "MY_TICKETS"}
+{( $SHOW "my" $TICKETS ) => "MY_TICKETS"}

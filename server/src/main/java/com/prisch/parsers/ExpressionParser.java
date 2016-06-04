@@ -3,6 +3,7 @@ package com.prisch.parsers;
 import com.prisch.factories.RequestFactory;
 import com.prisch.responders.ChangelogResponder;
 import com.prisch.responders.HelpResponder;
+import com.prisch.slack.SlackMessage;
 
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
@@ -10,39 +11,41 @@ import java.util.regex.Pattern;
 
 public enum ExpressionParser {
 
-    TICKET ((expression, senderName) -> {
+    TICKET_REF ((expression, slackMessage) -> {
         String ticketNumber = extractTicketNumber(expression);
         return ParsedResult.with(RequestFactory.buildTicketDetailsRequest(ticketNumber));
     }),
 
-    HELP ((expression, senderName) -> ParsedResult.with(new HelpResponder())),
-    SHOW_CHANGELOG ((expression, senderName) -> ParsedResult.with(new ChangelogResponder())),
+    HELP ((expression, slackMessage) -> ParsedResult.with(new HelpResponder())),
+    SHOW_CHANGELOG ((expression, slackMessage) -> ParsedResult.with(new ChangelogResponder())),
 
-    SHOW_TICKET ((expression, senderName) -> {
+    SHOW_TICKET ((expression, slackMessage) -> {
         String ticketNumber = extractTicketNumber(expression);
         return ParsedResult.with(RequestFactory.buildTicketDetailsRequest(ticketNumber));
     }),
 
-    SHOW_TICKET_WITH_NOTES ((expression, senderName) -> {
+    SHOW_TICKET_WITH_NOTES ((expression, slackMessage) -> {
         String ticketNumber = extractTicketNumber(expression);
         return ParsedResult.with(RequestFactory.buildTicketDetailsWithNotesRequest(ticketNumber));
     }),
 
-    SHARE_TICKET ((expression, senderName) -> {
+    SHARE_TICKET ((expression, slackMessage) -> {
         String ticketNumber = extractTicketNumber(expression);
         String userReference = extractUserReference(expression);
 
-        return ParsedResult.with(RequestFactory.buildTicketDetailsForSharingRequest(ticketNumber, userReference, senderName));
-    });
+        return ParsedResult.with(RequestFactory.buildTicketDetailsForSharingRequest(ticketNumber, userReference, slackMessage.getSenderRealName()));
+    }),
 
-    private final BiFunction<String, String, ParsedResult>  parseFunction;
+    MY_TICKETS ((expression, slackMessage) -> ParsedResult.with(RequestFactory.buildMyTicketList(slackMessage.getSenderUsername())));
 
-    ExpressionParser(BiFunction<String, String, ParsedResult> parseFunction) {
+    private final BiFunction<String, SlackMessage, ParsedResult>  parseFunction;
+
+    ExpressionParser(BiFunction<String, SlackMessage, ParsedResult> parseFunction) {
         this.parseFunction = parseFunction;
     }
 
-    public ParsedResult parse(String expression, String senderName) {
-        return parseFunction.apply(expression, senderName);
+    public ParsedResult parse(String expression, SlackMessage slackMessage) {
+        return parseFunction.apply(expression, slackMessage);
     }
 
     private static String extractTicketNumber(String expression) {

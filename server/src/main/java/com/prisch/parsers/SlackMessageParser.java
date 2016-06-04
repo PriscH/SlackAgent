@@ -1,5 +1,7 @@
 package com.prisch.parsers;
 
+import com.prisch.slack.SlackMessage;
+import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
 import edu.stanford.nlp.ling.tokensregex.*;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
@@ -28,15 +30,15 @@ public class SlackMessageParser {
     private static final StanfordCoreNLP PIPELINE = new StanfordCoreNLP(PIPELINE_PROPERTIES);
     private static final CoreMapExpressionExtractor<MatchedExpression> EXPRESSION_EXTRACTOR = CoreMapExpressionExtractor.createExtractorFromFiles(MATCHER_ENVIRONMENT, PATTERN_FILES);
 
-    public static ParsedResult parse(String message, String senderName) {
-        Annotation corpus = new Annotation(message);
+    public static ParsedResult parse(SlackMessage slackMessage) {
+        Annotation corpus = new Annotation(slackMessage.getText());
         PIPELINE.annotate(corpus);
         List<MatchedExpression> expressions = EXPRESSION_EXTRACTOR.extractExpressions(corpus);
 
         return expressions.stream().findFirst().flatMap(expression -> {
             return Arrays.stream(ExpressionParser.values()).filter(parser -> parser.toString().equals(expression.getValue().get()))
                                                            .findFirst()
-                                                           .map(parser -> parser.parse(expression.getText(), senderName));
+                                                           .map(parser -> parser.parse(expression.getText(), slackMessage));
         }).orElse(ParsedResult.empty());
     }
 }

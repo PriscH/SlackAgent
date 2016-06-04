@@ -1,5 +1,5 @@
-$TICKET     = "/[A-Z]{3}[0-9]{6}/"
-$USER_REF   = "(?m){3} /<@[A-Z0-9]{9}>/"
+$TICKET_REF = "/[A-Z]{3}[0-9]{6}/"
+$USER_REF = "(?m){3} /<@[A-Z0-9]{9}>/"
 
-{( $TICKET ) => "TICKET"}
+{( $TICKET_REF ) => "TICKET_REF"}
 {( $USER_REF ) => "USER_REF"}

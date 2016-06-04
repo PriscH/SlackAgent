@@ -11,6 +11,10 @@ public interface MessageMapping {
             return TicketDetails.Request.class;
         }
 
+        if (input.contains(TicketList.class.getName())) {
+            return TicketList.Request.class;
+        }
+
         return null;
     }
 
@@ -21,6 +25,10 @@ public interface MessageMapping {
 
         if (input.contains(TicketDetails.class.getName())) {
             return TicketDetails.Response.class;
+        }
+
+        if (input.contains(TicketList.class.getName())) {
+            return TicketList.Response.class;
         }
 
         return null;

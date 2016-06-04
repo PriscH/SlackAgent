@@ -1,6 +1,7 @@
 package com.prisch.parsers;
 
 import com.prisch.messages.TicketDetails;
+import com.prisch.slack.TestSlackMessage;
 import org.junit.Test;
 
 import java.util.LinkedList;
@@ -12,7 +13,7 @@ public class SlackMessageParserForTicketDetailsTest {
 
     @Test
     public void shouldParsePlainTicketNumber() {
-        ParsedResult result = SlackMessageParser.parse("ENH105413", null);
+        ParsedResult result = SlackMessageParser.parse(TestSlackMessage.of("ENH105413"));
         TicketDetails.Request request = assertMessageTypeAndCast(result);
         assertFalse(request.isNotesIncluded());
     }
@@ -20,8 +21,8 @@ public class SlackMessageParserForTicketDetailsTest {
     @Test
     public void shouldParseTicketNumberWithVerb() {
         List<ParsedResult> results = new LinkedList<>();
-        results.add(SlackMessageParser.parse("show ENH105413", null));
-        results.add(SlackMessageParser.parse("display ENH105413", null));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("show ENH105413")));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("display ENH105413")));
 
         results.stream().map(this::assertMessageTypeAndCast)
                 .forEach(result -> assertFalse(result.isNotesIncluded()));
@@ -30,9 +31,9 @@ public class SlackMessageParserForTicketDetailsTest {
     @Test
     public void shouldParseTicketNumberWithNotes() {
         List<ParsedResult> results = new LinkedList<>();
-        results.add(SlackMessageParser.parse("ENH105413 with notes", null));
-        results.add(SlackMessageParser.parse("ENH105413 and notes", null));
-        results.add(SlackMessageParser.parse("ENH105413 & notes", null));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("ENH105413 with notes")));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("ENH105413 and notes")));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("ENH105413 & notes")));
 
         results.stream().map(this::assertMessageTypeAndCast)
                         .forEach(result -> assertTrue(result.isNotesIncluded()));
@@ -41,9 +42,9 @@ public class SlackMessageParserForTicketDetailsTest {
     @Test
     public void shouldParseTicketNumberWithVerbAndNotes() {
         List<ParsedResult> results = new LinkedList<>();
-        results.add(SlackMessageParser.parse("show ENH105413 with notes", null));
-        results.add(SlackMessageParser.parse("display ENH105413 and notes", null));
-        results.add(SlackMessageParser.parse("show ENH105413 & notes", null));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("show ENH105413 with notes")));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("display ENH105413 and notes")));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("show ENH105413 & notes")));
 
         results.stream().map(this::assertMessageTypeAndCast)
                 .forEach(result -> assertTrue(result.isNotesIncluded()));
@@ -52,8 +53,8 @@ public class SlackMessageParserForTicketDetailsTest {
     @Test
     public void shouldParseTicketNumberForSharing() {
         List<ParsedResult> results = new LinkedList<>();
-        results.add(SlackMessageParser.parse("show ENH105413 to <@ABC123DEF>", "Jaco"));
-        results.add(SlackMessageParser.parse("share ENH105413 with <@ABC123DEF>", "Jaco"));
+        results.add(SlackMessageParser.parse(new TestSlackMessage.Builder().withText("show ENH105413 to <@ABC123DEF>").withSenderRealname("Jaco").build()));
+        results.add(SlackMessageParser.parse(new TestSlackMessage.Builder().withText("share ENH105413 with <@ABC123DEF>").withSenderRealname("Jaco").build()));
 
         results.stream().map(this::assertMessageTypeAndCast)
                         .forEach(result -> {
@@ -65,10 +66,10 @@ public class SlackMessageParserForTicketDetailsTest {
     @Test
     public void shouldParseUserReferenceForSharing() {
         List<ParsedResult> results = new LinkedList<>();
-        results.add(SlackMessageParser.parse("share ENH105413 with <@ABC123DEF>", "Jaco"));
-        results.add(SlackMessageParser.parse("share ENH105413 with <@A12345678>", "Jaco"));
-        results.add(SlackMessageParser.parse("share ENH105413 with <@A1A1A1A1A>", "Jaco"));
-        results.add(SlackMessageParser.parse("share ENH105413 with <@ZX12ZX123>", "Jaco"));
+        results.add(SlackMessageParser.parse(new TestSlackMessage.Builder().withText("show ENH105413 to <@ABC123DEF>").withSenderRealname("Jaco").build()));
+        results.add(SlackMessageParser.parse(new TestSlackMessage.Builder().withText("show ENH105413 to <@A12345678>").withSenderRealname("Jaco").build()));
+        results.add(SlackMessageParser.parse(new TestSlackMessage.Builder().withText("show ENH105413 to <@A1A1A1A1A>").withSenderRealname("Jaco").build()));
+        results.add(SlackMessageParser.parse(new TestSlackMessage.Builder().withText("show ENH105413 to <@ZX12ZX123>").withSenderRealname("Jaco").build()));
 
         results.stream().map(this::assertMessageTypeAndCast)
                         .forEach(result -> assertTrue(result.getUserReference().isPresent()));
@@ -77,8 +78,8 @@ public class SlackMessageParserForTicketDetailsTest {
     @Test
     public void shouldIgnoreCase() {
         List<ParsedResult> results = new LinkedList<>();
-        results.add(SlackMessageParser.parse("SHow enh105413", null));
-        results.add(SlackMessageParser.parse("disPLAY enh105413", null));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("SHow enh105413")));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("disPLAY enh105413")));
 
         results.stream().forEach(this::assertMessageTypeAndCast);
     }
@@ -86,9 +87,9 @@ public class SlackMessageParserForTicketDetailsTest {
     @Test
     public void shouldRejectInvalidTickets() {
         List<ParsedResult> results = new LinkedList<>();
-        results.add(SlackMessageParser.parse("105413", null));
-        results.add(SlackMessageParser.parse("show ENH105", null));
-        results.add(SlackMessageParser.parse("display ENH105413a", null));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("105413")));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("show ENH105")));
+        results.add(SlackMessageParser.parse(TestSlackMessage.of("display ENH105413a")));
 
         results.stream().forEach(result -> assertFalse(result.hasMessage()));
     }

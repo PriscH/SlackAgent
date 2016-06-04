@@ -1,6 +1,7 @@
 package com.prisch.factories;
 
 import com.prisch.messages.TicketDetails;
+import com.prisch.messages.TicketList;
 
 public interface RequestFactory {
 
@@ -20,6 +21,12 @@ public interface RequestFactory {
         TicketDetails.Request request = buildTicketDetailsRequest(ticketNumber);
         request.setUserReference(userReference);
         request.setSenderName(senderName);
+        return request;
+    }
+
+    static TicketList.Request buildMyTicketList(String username) {
+        TicketList.Request request = new TicketList.Request();
+        request.setUsername(username);
         return request;
     }
 }

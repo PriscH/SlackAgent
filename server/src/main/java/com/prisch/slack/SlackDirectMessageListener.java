@@ -20,20 +20,18 @@ public class SlackDirectMessageListener implements SlackMessagePostedListener {
     }
 
     @Override
-    public void onEvent(SlackMessagePosted event, SlackSession rawSlackSession) {
+    public void onEvent(SlackMessagePosted messagePostEvent, SlackSession rawSlackSession) {
         com.prisch.slack.SlackSession slackSession = com.prisch.slack.SlackSession.wrap(rawSlackSession);
 
         try {
-            if (event.getChannel().isDirect() && !event.getSender().isBot()) {
-                String senderName = event.getSender().getRealName().trim().isEmpty() ? event.getSender().getUserName() : event.getSender().getRealName();
-
-                ParsedResult result = SlackMessageParser.parse(event.getMessageContent(), senderName);
+            if (messagePostEvent.getChannel().isDirect() && !messagePostEvent.getSender().isBot()) {
+                ParsedResult result = SlackMessageParser.parse(SlackMessage.from(messagePostEvent));
                 if (result.hasResponder()) {
-                    result.getResponder().respond(slackSession, event.getChannel());
+                    result.getResponder().respond(slackSession, messagePostEvent.getChannel());
                 } else if (result.hasMessage()) {
-                    bot.sendRequest(result.getMessage(), event.getChannel());
+                    bot.sendRequest(result.getMessage(), messagePostEvent.getChannel());
                 } else {
-                    slackSession.sendMessage(event.getChannel(), "Sorry, my vocabulary and abilities are still very limited. Please give me a valid ticket number and I'll find it for you.");
+                    slackSession.sendMessage(messagePostEvent.getChannel(), "Sorry, my vocabulary and abilities are still very limited. Please give me a valid ticket number and I'll find it for you.");
                 }
             }
         } catch (RuntimeException ex) {

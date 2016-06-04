@@ -1,11 +1,16 @@
 package com.prisch.sbm;
 
+import com.prisch.collections.Lists;
+import com.prisch.domain.TicketState;
 import com.prisch.sbm.stubs.*;
 import com.prisch.util.Result;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.ws.BindingProvider;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.function.Function.identity;
 
 public class SBMService {
 
@@ -19,6 +24,7 @@ public class SBMService {
     private final Auth auth;
 
     private TableIdentifier tableIdentifier;
+    private Map<TicketState, StateIdentifier> stateMap;
 
 
     // ===== Interface =====
@@ -35,6 +41,9 @@ public class SBMService {
     public void initialise() throws Exception {
         SolutionIdentifier solutionIdentifier = getChangeRequestSolutionIdentifier();
         tableIdentifier = getChangeRequestsTableIdentifier(solutionIdentifier);
+
+        ProjectIdentifier projectIdentifier = getChangeRequestsProjectIdentifier(tableIdentifier);
+        stateMap = getTicketStateMap(projectIdentifier);
 
         LOGGER.info("Successfully initialized the SBM service for table " + tableIdentifier.getDisplayName().getValue());
     }
@@ -60,6 +69,23 @@ public class SBMService {
         }
     }
 
+    public Result<TTItemList> getTicketsFor(long userId) {
+        final String QUERY = "(ts_l3_primary_contact_user = '%d' and ts_state not in (%s))";
+
+        String excludedStates = stateMap.entrySet().stream().filter(entry -> !entry.getKey().isRelevantForL3())
+                                        .map(entry -> String.format("'%s'", entry.getValue().getId().toString()))
+                                        .collect(Collectors.joining(","));
+
+        String query = String.format(QUERY, userId, excludedStates);
+        try {
+            TTItemList items = port.getItemsByQuery(auth, tableIdentifier, query, null, null, null, getOptionsToRestrictTicketToBasic());
+            return Result.success(items);
+        } catch (AEWebservicesFaultFault ex) {
+            LOGGER.error(ex.getMessage(), ex);
+            return Result.failure("Sorry, I can't talk to SBM at this moment.");
+        }
+    }
+
     // ===== Helpers =====
 
     private SolutionIdentifier getChangeRequestSolutionIdentifier() throws Exception {
@@ -68,12 +94,9 @@ public class SBMService {
         Optional<SolutionIdentifier> identifier = port.getSolutions(auth, null).stream()
                                                       .map(result -> result.getSolution().getValue())
                                                       .filter(solution -> solution.getUniqueName().getValue().equals(SOLUTION_NAME))
-                                                      .findFirst();
+                                                      .findAny();
 
-        if (!identifier.isPresent()) {
-            throw new IllegalStateException("Could not find the " + SOLUTION_NAME + " solution.");
-        }
-        return identifier.get();
+        return identifier.orElseThrow(() -> new IllegalStateException("Could not find the " + SOLUTION_NAME + " solution."));
     }
 
     private TableIdentifier getChangeRequestsTableIdentifier(SolutionIdentifier solutionIdentifier) throws Exception {
@@ -82,12 +105,40 @@ public class SBMService {
         Optional<TableIdentifier> identifier = port.getTables(auth, solutionIdentifier, null, null).stream()
                                                    .map(result -> result.getTable().getValue())
                                                    .filter(table -> table.getDbName().getValue().equals(TABLE_NAME))
-                                                   .findFirst();
+                                                   .findAny();
 
-        if (!identifier.isPresent()) {
-            throw new IllegalStateException("Could not find the " + TABLE_NAME + " table.");
-        }
-        return identifier.get();
+        return identifier.orElseThrow(() -> new IllegalStateException("Could not find the " + TABLE_NAME + " table."));
+    }
+
+    private ProjectIdentifier getChangeRequestsProjectIdentifier(TableIdentifier tableIdentifier) throws Exception {
+        final String PROJECT_NAME = "LOADCHART";
+
+        Optional<ProjectIdentifier> identifier = port.getSubmitProjects(auth, tableIdentifier, null).stream()
+                                                     .map(result -> result.getProject().getValue())
+                                                     .filter(project -> project.getDisplayName().getValue().equals(PROJECT_NAME))
+                                                     .findAny();
+
+        return identifier.orElseThrow(() -> new IllegalStateException("Could not find the " + PROJECT_NAME + " project."));
+    }
+
+    private Map<TicketState, StateIdentifier> getTicketStateMap(ProjectIdentifier projectIdentifier) throws Exception {
+        List<StateIdentifier> stateIdentifiers = port.getWorkflows(auth, Lists.of(projectIdentifier)).stream()
+                                                     .flatMap(result -> result.getWorkflow().getValue().getState().stream())
+                                                     .map(state -> state.getId().getValue())
+                                                     .collect(Collectors.toList());
+
+        return stateIdentifiers.stream().filter(identifier -> TicketState.matching(identifier.getInternalName().getValue()).isPresent())
+                                        .collect(Collectors.toMap(identifier -> TicketState.matching(identifier.getInternalName().getValue()).get(), identity()));
+
+    }
+
+    private MultipleResponseItemOptions getOptionsToRestrictTicketToBasic() {
+        MultipleResponseItemOptions options = new MultipleResponseItemOptions();
+
+        options.setSections(SectionsOption.SECTIONS_SPECIFIED);
+        options.setSpecifiedSections(factory.createResponseItemOptionsSpecifiedSections("SECTION:FIXED"));
+
+        return options;
     }
 
 }

@@ -3,6 +3,7 @@ package com.prisch.handlers;
 import com.prisch.messages.FailureResponse;
 import com.prisch.messages.Message;
 import com.prisch.messages.TicketDetails;
+import com.prisch.messages.TicketList;
 import com.prisch.slack.SlackSession;
 import com.ullink.slack.simpleslackapi.SlackChannel;
 
@@ -19,6 +20,8 @@ public class ServerMessageHandlerFactory {
             new FailureResponseHandler(slackSession, slackChannel).process((FailureResponse)response);
         } else if (response instanceof TicketDetails.Response) {
             new TicketDetailsResponseHandler(slackSession, slackChannel).process((TicketDetails.Response)response);
+        } else if (response instanceof TicketList.Response) {
+            new TicketListResponseHandler(slackSession, slackChannel).process((TicketList.Response)response);
         } else {
             throw new IllegalStateException("Unknown message: " + response.getClass().getName());
         }

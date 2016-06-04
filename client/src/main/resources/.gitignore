@@ -1,3 +1,6 @@
 client.properties
 client.properties.local
 client.properties.remote
+users.properties
+users.properties.local
+users.properties.remote
