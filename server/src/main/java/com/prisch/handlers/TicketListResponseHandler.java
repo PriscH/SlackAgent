@@ -1,8 +1,8 @@
 package com.prisch.handlers;
 
 import com.prisch.messages.TicketList;
-import com.prisch.slack.SlackSession;
 import com.ullink.slack.simpleslackapi.SlackChannel;
+import com.ullink.slack.simpleslackapi.SlackSession;
 
 import static com.prisch.slack.SlackFormatter.*;
 

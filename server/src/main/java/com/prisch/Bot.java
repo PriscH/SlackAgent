@@ -3,8 +3,8 @@ package com.prisch;
 import com.prisch.handlers.ServerMessageHandlerFactory;
 import com.prisch.messages.Message;
 import com.prisch.slack.SlackDirectMessageListener;
-import com.prisch.slack.SlackSession;
 import com.ullink.slack.simpleslackapi.SlackChannel;
+import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
 
 import java.io.InputStream;
@@ -19,7 +19,7 @@ public class Bot {
 
     private Bot(String serverHost, int serverPort, String slackToken) {
         agentServer = new AgentServer(serverHost, serverPort);
-        slackSession = SlackSession.wrap(SlackSessionFactory.createWebSocketSlackSession(slackToken));
+        slackSession = SlackSessionFactory.createWebSocketSlackSession(slackToken);
         messageHandlerFactory = new ServerMessageHandlerFactory(slackSession);
     }
 

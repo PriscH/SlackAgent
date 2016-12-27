@@ -20,9 +20,7 @@ public class SlackDirectMessageListener implements SlackMessagePostedListener {
     }
 
     @Override
-    public void onEvent(SlackMessagePosted messagePostEvent, SlackSession rawSlackSession) {
-        com.prisch.slack.SlackSession slackSession = com.prisch.slack.SlackSession.wrap(rawSlackSession);
-
+    public void onEvent(SlackMessagePosted messagePostEvent, SlackSession slackSession) {
         try {
             if (messagePostEvent.getChannel().isDirect() && !messagePostEvent.getSender().isBot()) {
                 ParsedResult result = SlackMessageParser.parse(SlackMessage.from(messagePostEvent));

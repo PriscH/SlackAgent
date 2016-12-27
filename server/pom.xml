@@ -63,6 +63,11 @@
             <name>bintray</name>
             <url>http://dl.bintray.com/giflw/maven</url>
         </repository>
+
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -97,9 +102,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.ullink.slack</groupId>
-            <artifactId>simpleslackapi</artifactId>
-            <version>0.5.0</version>
+            <groupId>com.github.Ullink</groupId>
+            <artifactId>simple-slack-api</artifactId>
+            <version>5371853a86</version>
 
             <exclusions>
                 <exclusion>
@@ -119,6 +124,13 @@
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
+        </dependency>
+
+        <!-- Required by com.ullink.slack.simpleslackapi -->
+        <dependency>
+            <groupId>org.glassfish.tyrus.bundles</groupId>
+            <artifactId>tyrus-standalone-client</artifactId>
+            <version>1.13</version>
         </dependency>
     </dependencies>
 </project>

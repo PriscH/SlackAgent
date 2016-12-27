@@ -1,7 +1,7 @@
 package com.prisch.responders;
 
-import com.prisch.slack.SlackSession;
 import com.ullink.slack.simpleslackapi.SlackChannel;
+import com.ullink.slack.simpleslackapi.SlackSession;
 
 public interface Responder {
 

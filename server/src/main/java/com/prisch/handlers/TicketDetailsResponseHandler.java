@@ -2,16 +2,12 @@ package com.prisch.handlers;
 
 import com.overzealous.remark.Options;
 import com.overzealous.remark.Remark;
-import com.overzealous.remark.convert.DocumentConverter;
 import com.prisch.formatters.Formatters;
 import com.prisch.messages.TicketDetails;
-import com.prisch.slack.SlackAttachment;
-import com.prisch.slack.SlackFormatter;
-import com.prisch.slack.SlackSession;
-import com.ullink.slack.simpleslackapi.SlackChannel;
-import com.ullink.slack.simpleslackapi.SlackUser;
+import com.prisch.slack.SlackAttachmentFactory;
+import com.ullink.slack.simpleslackapi.*;
 
-import java.util.LinkedList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +27,33 @@ public class TicketDetailsResponseHandler {
     }
 
     public void process(TicketDetails.Response response) {
+        SlackPreparedMessage.Builder slackMessageBuilder = new SlackPreparedMessage.Builder();
+
+        String messageText = escape(buildMessageText(response));
+        slackMessageBuilder.withMessage(messageText);
+
+        if (!response.getNotes().isEmpty()) {
+            List<SlackAttachment> attachments = buildNoteAttachments(response.getNotes());
+            slackMessageBuilder.withAttachments(attachments);
+        }
+
+        if (response.getUserReference().isPresent()) {
+            SlackUser receiver = slackSession.findUserById(response.getUserReference().get());
+            if (receiver.isBot()) {
+                slackSession.sendMessage(slackChannel, "Sorry, I only talk to humans.");
+            } else {
+                String receiverName = receiver.getRealName().trim().isEmpty() ? receiver.getUserName() : receiver.getRealName();
+
+                SlackUser receiverUser = slackSession.findUserById(response.getUserReference().get());
+                slackSession.sendMessageToUser(receiverUser, slackMessageBuilder.build());
+                slackSession.sendMessage(slackChannel, String.format("Okay, I shared %s with %s", response.getTicketNumber(), receiverName));
+            }
+        } else {
+            slackSession.sendMessage(slackChannel, slackMessageBuilder.build());
+        }
+    }
+
+    private String buildMessageText(TicketDetails.Response response) {
         StringBuilder stringBuilder = new StringBuilder();
 
         if (response.getUserReference().isPresent()) {
@@ -52,38 +75,18 @@ public class TicketDetailsResponseHandler {
         stringBuilder.append(block(response.getDescription()) + newline());
         stringBuilder.append(inline(response.getUrl()) + newline());
 
-        List<SlackAttachment> attachments = new LinkedList<>();
-        if (!response.getNotes().isEmpty()) {
-            attachments = buildNoteAttachments(response.getNotes());
-            stringBuilder.append(newline());
-        }
+        stringBuilder.append(newline());
 
-        String slackMessage = escape(stringBuilder.toString());
-
-        if (response.getUserReference().isPresent()) {
-            SlackUser receiver = slackSession.findUserById(response.getUserReference().get());
-            if (receiver.isBot()) {
-                slackSession.sendMessage(slackChannel, "Sorry, I only talk to humans.");
-            } else {
-                String receiverName = receiver.getRealName().trim().isEmpty() ? receiver.getUserName() : receiver.getRealName();
-
-                slackSession.sendMessageToUser(response.getUserReference().get(), slackMessage);
-                slackSession.sendMessage(slackChannel, String.format("Okay, I shared %s with %s", response.getTicketNumber(), receiverName));
-            }
-        } else {
-            slackSession.sendMessage(slackChannel, slackMessage, attachments);
-        }
+        return stringBuilder.toString();
     }
 
     private List<SlackAttachment> buildNoteAttachments(List<TicketDetails.Note> notes) {
-        notes.sort((a, b) -> a.getModifiedDateTime().compareTo(b.getModifiedDateTime()));
+        notes.sort(Comparator.comparing(TicketDetails.Note::getModifiedDateTime));
         return notes.stream().map(this::noteToAttachment).collect(Collectors.toList());
     }
 
     private SlackAttachment noteToAttachment(TicketDetails.Note note) {
-        SlackAttachment slackAttachment = new SlackAttachment();
-
-        slackAttachment.enableTextMarkdown();
+        SlackAttachment slackAttachment = SlackAttachmentFactory.create();
         slackAttachment.setTitle(note.getTitle());
 
         StringBuilder noteBuilder = new StringBuilder();

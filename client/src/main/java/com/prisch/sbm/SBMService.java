@@ -61,7 +61,7 @@ public class SBMService {
             return Result.success(items.getItem().get(0));
         } catch (AEWebservicesFaultFault ex) {
             if (ex.getMessage().contains(UNAUTHORIZED_MESSAGE_PORTION)) {
-                return Result.failure("Sorry, I do not have access to ticket with ID" + ticketNumber);
+                return Result.failure("Sorry, I do not have access to ticket with ID " + ticketNumber);
             }
 
             LOGGER.error(ex.getMessage(), ex);
