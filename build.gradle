@@ -1,0 +1,62 @@
+import java.nio.file.Files
+import groovy.xml.XmlUtil
+
+def serverPath = 'server'
+def libraryPath = 'lib'
+def openshiftPath = '../OpenShift/SlackAgent'
+
+task packServer {
+  doLast {
+    logger.lifecycle 'Clearing previous OpenShift project.'
+    delete openshiftPath.concat('/pom.xml'), openshiftPath.concat('/src'), openshiftPath.concat('/.openshift')
+
+    logger.lifecycle 'Copying server project to OpenShift project.'
+    copy {
+      from serverPath
+      into openshiftPath
+      exclude 'target', '*.iml'
+    }
+
+    logger.lifecycle 'Copying library project to OpenShift project.'
+    copy { 
+      from libraryPath.concat('/src')
+      into openshiftPath.concat('/src')
+      duplicatesStrategy = 'fail'
+    }
+
+    logger.lifecycle 'Merging POMs from server project and library project.'
+    def openshiftPOM = new XmlParser().parse(openshiftPath.concat('/pom.xml'))
+    def libraryPOM = new XmlParser().parse(libraryPath.concat('/pom.xml'))
+
+    openshiftPOM.remove(openshiftPOM.parent)
+    libraryPOM.dependencies.dependency.each { dependency ->
+      openshiftPOM.dependencies[0].append(dependency)
+    }
+
+    file(openshiftPath.concat('/pom.xml')) withWriter { writer -> 
+      XmlUtil.serialize(openshiftPOM, writer)
+    }
+
+    logger.lifecycle 'The OpenShift project has been packaged.'
+  }
+}
+
+task deployServer(dependsOn: packServer) {
+  doLast {
+    def commitMessage = "Updated Deployment: ${new Date().format('yyyy-MM-dd hh:mm:ss')}"
+
+    logger.lifecycle 'Creating commit with changes.'
+    exec {
+      standardOutput = new ByteArrayOutputStream()
+      errorOutput = new ByteArrayOutputStream()
+      workingDir openshiftPath
+      commandLine 'git', 'add', '-A'
+    }
+    exec {
+      standardOutput = new ByteArrayOutputStream()
+      errorOutput = new ByteArrayOutputStream()
+      workingDir openshiftPath
+      commandLine 'git', 'commit', '-m', commitMessage
+    }
+  }
+}
