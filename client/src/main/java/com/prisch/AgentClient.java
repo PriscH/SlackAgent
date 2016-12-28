@@ -7,6 +7,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import com.prisch.handlers.ClientMessageHandlerFactory;
 import com.prisch.messages.Message;
 import com.prisch.messages.MessageMapping;
+import com.sun.corba.se.impl.activation.CommandHandler;
 import org.apache.http.HttpHost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,8 @@ import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 
 public class AgentClient {
+
+    private static final long CONNECTION_RETRY_DELAY = 300_000L;
 
     private static final String CACHE_CONTROL_HEADER = "cache-control";
     private static final String CACHE_CONTROL_VALUE = "private, max-age=0, no-cache";
@@ -39,7 +42,7 @@ public class AgentClient {
 
     // ===== Interface =====
 
-    public void connect() {
+    public void connect() throws InterruptedException {
         try {
             Unirest.head(serverAddress).asString();
             LOGGER.info("Successfully established a connection with the server.");
@@ -58,7 +61,12 @@ public class AgentClient {
                     ForkJoinPool.commonPool().submit(new CommandHandler(response.getBody()));
                 }
             } catch (UnirestException ex) {
-                LOGGER.error(ex.getMessage(), ex);
+                LOGGER.error(ex.getMessage());
+                LOGGER.warn("Unable to connect to server, waiting before trying again ...");
+
+                // Delay before trying again so as not to flood log files
+                Thread.sleep(CONNECTION_RETRY_DELAY);
+                LOGGER.warn("Retrying to connect to server.");
             }
         }
     }
