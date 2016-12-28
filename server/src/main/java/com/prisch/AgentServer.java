@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class AgentServer extends NanoHTTPD {
+public class AgentServer extends RouterHTTPD {
 
     private static final int REQUEST_TIMEOUT_SECONDS = 60;
     private static final int CONNECTION_LOST_MILLISECONDS = REQUEST_TIMEOUT_SECONDS * 1000 + 5000;
@@ -37,6 +37,18 @@ public class AgentServer extends NanoHTTPD {
     // ===== Interface =====
 
     public void start() throws IOException {
+        addRoute("/", Method.GET, (session) -> { // Long polling for commands
+            lastConnectionTime = System.currentTimeMillis();
+            return serveCommand();
+        });
+
+        addRoute("/", Method.POST, this::serveResult); // Responses to commands
+
+        addRoute("/", Method.HEAD, (session) -> { // Checking server availability
+            LOGGER.info("The client managed to establish a successful connection.");
+            return newFixedLengthResponse("OK");
+        });
+
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         LOGGER.info("Server running on " + getHostname() + ":" + getListeningPort());
     }
@@ -61,22 +73,7 @@ public class AgentServer extends NanoHTTPD {
         return future;
     }
 
-    // ===== HTTP Handlers =====
-
-    @Override
-    public Response serve(IHTTPSession session) {
-        if (session.getMethod() == Method.GET) { // Long polling for commands
-            lastConnectionTime = System.currentTimeMillis();
-            return serveCommand();
-        } else if (session.getMethod() == Method.POST) { // Reponses to commands
-            return serveResult(session);
-        } else if (session.getMethod() == Method.HEAD) { // Checking server availability
-            LOGGER.info("The client managed to establish a successful connection.");
-            return newFixedLengthResponse("OK");
-        } else {
-            return newFixedLengthResponse("OK");
-        }
-    }
+    // ===== HTTP Responders =====
 
     private Response serveCommand() {
         try {

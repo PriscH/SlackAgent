@@ -2,6 +2,7 @@ package com.prisch.handlers;
 
 import com.overzealous.remark.Options;
 import com.overzealous.remark.Remark;
+import com.prisch.collections.Lists;
 import com.prisch.formatters.Formatters;
 import com.prisch.messages.TicketDetails;
 import com.prisch.slack.SlackAttachmentFactory;
@@ -49,6 +50,14 @@ public class TicketDetailsResponseHandler {
                 slackSession.sendMessage(slackChannel, String.format("Okay, I shared %s with %s", response.getTicketNumber(), receiverName));
             }
         } else {
+            SlackAction slackAction = new SlackAction();
+            slackAction.setName("Test");
+            slackAction.setValue("Test");
+
+            SlackAttachment slackAttachment = new SlackAttachment();
+            slackAttachment.addAction(slackAction);
+            slackMessageBuilder.withAttachments(Lists.of(slackAttachment));
+
             slackSession.sendMessage(slackChannel, slackMessageBuilder.build());
         }
     }
