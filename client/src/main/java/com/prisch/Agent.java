@@ -3,6 +3,7 @@ package com.prisch;
 import com.prisch.handlers.ClientMessageHandlerFactory;
 import com.prisch.sbm.SBMService;
 import org.apache.http.HttpHost;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;

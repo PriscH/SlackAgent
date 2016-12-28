@@ -1,7 +1,6 @@
 package com.prisch.parsers;
 
 import com.prisch.slack.SlackMessage;
-import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
 import edu.stanford.nlp.ling.tokensregex.*;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;

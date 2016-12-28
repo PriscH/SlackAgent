@@ -37,17 +37,9 @@ public class AgentServer extends RouterHTTPD {
     // ===== Interface =====
 
     public void start() throws IOException {
-        addRoute("/", Method.GET, (session) -> { // Long polling for commands
-            lastConnectionTime = System.currentTimeMillis();
-            return serveCommand();
-        });
-
-        addRoute("/", Method.POST, this::serveResult); // Responses to commands
-
-        addRoute("/", Method.HEAD, (session) -> { // Checking server availability
-            LOGGER.info("The client managed to establish a successful connection.");
-            return newFixedLengthResponse("OK");
-        });
+        addRoute("/command", Method.GET, this::serveCommand); // Long polling for commands
+        addRoute("/result", Method.POST, this::serveResult); // Responses to commands
+        addRoute("/connect", Method.POST, this::handleConnection); // Checking server availability
 
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         LOGGER.info("Server running on " + getHostname() + ":" + getListeningPort());
@@ -75,7 +67,9 @@ public class AgentServer extends RouterHTTPD {
 
     // ===== HTTP Responders =====
 
-    private Response serveCommand() {
+    private Response serveCommand(IHTTPSession session) {
+        lastConnectionTime = System.currentTimeMillis();
+
         try {
             Message message = messageQueue.poll(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (message == null) {
@@ -87,6 +81,11 @@ public class AgentServer extends RouterHTTPD {
             LOGGER.error(ex.getMessage(), ex);
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, "Server thread was interrupted.");
         }
+    }
+
+    private Response serveMessage(Message message) {
+        String messageJson = GSON.toJson(message);
+        return newFixedLengthResponse(messageJson);
     }
 
     private Response serveResult(IHTTPSession session) {
@@ -110,10 +109,12 @@ public class AgentServer extends RouterHTTPD {
         return newFixedLengthResponse("Successfully parsed result.");
     }
 
-    private Response serveMessage(Message message) {
-        String messageJson = GSON.toJson(message);
-        return newFixedLengthResponse(messageJson);
+    private Response handleConnection(IHTTPSession session) {
+        LOGGER.info("The client managed to establish a successful connection.");
+        return newFixedLengthResponse("OK");
     }
+
+    // === Helpers ===
 
     public boolean isConnected() {
         return (System.currentTimeMillis() - lastConnectionTime < CONNECTION_LOST_MILLISECONDS);

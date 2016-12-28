@@ -4,17 +4,20 @@ import com.prisch.collections.Lists;
 import com.prisch.domain.TicketState;
 import com.prisch.sbm.stubs.*;
 import com.prisch.util.Result;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.ws.BindingProvider;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.function.Function.identity;
 
 public class SBMService {
 
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(SBMService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SBMService.class);
 
     private static final String UNAUTHORIZED_MESSAGE_PORTION = "does not have the privilege";
 

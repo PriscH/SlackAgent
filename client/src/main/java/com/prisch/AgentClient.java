@@ -7,7 +7,6 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import com.prisch.handlers.ClientMessageHandlerFactory;
 import com.prisch.messages.Message;
 import com.prisch.messages.MessageMapping;
-import com.sun.corba.se.impl.activation.CommandHandler;
 import org.apache.http.HttpHost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +43,7 @@ public class AgentClient {
 
     public void connect() throws InterruptedException {
         try {
-            Unirest.head(serverAddress).asString();
+            Unirest.post(path("/connect")).asString();
             LOGGER.info("Successfully established a connection with the server.");
         } catch (UnirestException ex) {
             LOGGER.error("Unable to connect to the server: " + ex.getMessage());
@@ -53,7 +52,7 @@ public class AgentClient {
 
         while (true) {
             try {
-                HttpResponse<String> response = Unirest.get(serverAddress)
+                HttpResponse<String> response = Unirest.get(path("/command"))
                                                        .header(CACHE_CONTROL_HEADER, CACHE_CONTROL_VALUE)
                                                        .asString();
 
@@ -89,10 +88,27 @@ public class AgentClient {
             String responseJson = GSON.toJson(response);
 
             try {
-                Unirest.post(serverAddress).body(responseJson).asString();
+                Unirest.post(path("/result")).body(responseJson).asString();
             } catch (UnirestException ex) {
                 LOGGER.error(ex.getMessage(), ex);
             }
         }
+    }
+
+    // === Helpers ===
+
+    /**
+     * Joins a relative path to the server address.
+     */
+    private String path(String relativePath) {
+        if (serverAddress.endsWith("/") && relativePath.startsWith("/")) {
+            return serverAddress + relativePath.substring(1);
+        }
+
+        if (!serverAddress.endsWith("/") && !relativePath.startsWith("/")) {
+            return serverAddress + "/" + relativePath;
+        }
+
+        return serverAddress + relativePath;
     }
 }
