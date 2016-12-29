@@ -1,5 +1,6 @@
 plugins {
   id 'org.hidetake.ssh' version '2.7.0'
+  id "com.github.dkorotych.gradle-maven-exec" version "0.4"
 }
 
 repositories {
@@ -22,9 +23,13 @@ remotes {
 }
 
 def serverPath = 'server'
+def agentPath = 'client'
 def libraryPath = 'lib'
+
+def agentResourcesPath = agentPassword + '/src/main/resources'
+
 def openshiftPath = '../OpenShift/SlackAgent'
-def resourcesPath = openshiftPath + '/src/main/resources'
+def openshiftResourcesPath = openshiftPath + '/src/main/resources'
 
 task packServer {
   doLast {
@@ -47,13 +52,13 @@ task packServer {
 
     logger.lifecycle 'Setting up remote configuration.'
     copy { 
-      from resourcesPath.concat('/server.properties.remote')
-      into resourcesPath
+      from openshiftResourcesPath.concat('/server.properties.remote')
+      into openshiftResourcesPath
       rename 'server.properties.remote', 'server.properties'
       duplicatesStrategy = 'include'
     }
 
-    delete fileTree(resourcesPath) {
+    delete fileTree(openshiftResourcesPath) {
       include 'server.properties.*'
     }
 
@@ -93,16 +98,16 @@ task stopServer() {
 }
 
 task deployServer(dependsOn: [packServer, stopServer]) {
-  doLast {
-    def git = { String... arguments ->
-        exec {
-          standardOutput = new ByteArrayOutputStream()
-          workingDir openshiftPath
-          executable 'git'
-          args arguments
-        }
-    }
+  def git = { String... arguments ->
+      exec {
+        standardOutput = new ByteArrayOutputStream()
+        workingDir openshiftPath
+        executable 'git'
+        args arguments
+      }
+  }
 
+  doLast {
     logger.lifecycle 'Creating commit with changes.'
     git 'add', '-A'
     git 'commit', '-m', "Updated Deployment: ${new Date().format('yyyy-MM-dd hh:mm:ss')}"
@@ -111,6 +116,32 @@ task deployServer(dependsOn: [packServer, stopServer]) {
     git 'push'
 
     logger.lifecycle 'The OpenShift server has been deployed.'
+  }
+}
+
+task packAgent() {
+  def copyProps = { source, target ->
+      copy { 
+        from agentResourcesPath.concat('/' + source)
+        into agentResourcesPath
+        rename source, target
+        duplicatesStrategy = 'include'
+      }
+  }
+
+  doLast {
+    logger.lifecycle 'Setting up remote configuration.'
+    copyProps 'client.properties.remote', 'client.properties'
+    copyProps 'user.properties.remote', 'user.properties'
+
+    logger.lifecycle 'Building agent.'
+    mavenexec {
+      workingDir file(agentPath)
+      goals 'clean', 'compile', 'assembly:single'
+      activateProfiles 'remote'
+      quiet true
+    }
+    logger.lifecycle 'Agent has been built.'
   }
 }
 
@@ -123,5 +154,25 @@ task stopAgent() {
       }
     }
     logger.lifecycle 'Agent has been stopped.'
+  }
+}
+
+task deployAgent(dependsOn: [packAgent, stopAgent]) {
+  def agentSourcePath = agentPath + '/target/agent-jar-with-dependencies.jar'
+  def agentDestinationPath = '/home/' + agentUser + '/slackagent.jar'
+
+  doLast {
+    ssh.run {
+      session(remotes.agent) {
+        logger.lifecycle 'Copying agent to host.'
+        put from: agentSourcePath,
+            into: agentDestinationPath
+        
+        logger.lifecycle 'Starting agent.'
+        execute './startagent.sh'
+      }
+    }
+
+    logger.lifecycle 'The agent has been deployed.'
   }
 }
