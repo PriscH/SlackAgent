@@ -56,7 +56,7 @@ public class RouterHTTPD extends NanoHTTPD {
         private final String path;
         private final Method method;
 
-        public Route(String path, Method method) {
+        Route(String path, Method method) {
             this.path = path;
             this.method = method;
         }

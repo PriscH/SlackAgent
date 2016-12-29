@@ -1,9 +1,11 @@
-import java.nio.file.Files
-import groovy.xml.XmlUtil
+repositories {
+   mavenLocal()
+}
 
 def serverPath = 'server'
 def libraryPath = 'lib'
 def openshiftPath = '../OpenShift/SlackAgent'
+def resourcesPath = openshiftPath + '/src/main/resources'
 
 task packServer {
   doLast {
@@ -24,18 +26,36 @@ task packServer {
       duplicatesStrategy = 'fail'
     }
 
-    logger.lifecycle 'Merging POMs from server project and library project.'
+    logger.lifecycle 'Setting up remote configuration.'
+    copy { 
+      from resourcesPath.concat('/server.properties.remote')
+      into resourcesPath
+      rename 'server.properties.remote', 'server.properties'
+      duplicatesStrategy = 'include'
+    }
+
+    delete fileTree(resourcesPath) {
+      include 'server.properties.*'
+    }
+
+    logger.lifecycle 'Merging POMs from parent project, server project and library project.'
+    def parentPOM = new XmlParser().parse('pom.xml')
     def openshiftPOM = new XmlParser().parse(openshiftPath.concat('/pom.xml'))
     def libraryPOM = new XmlParser().parse(libraryPath.concat('/pom.xml'))
 
+    // Remove the parent module and dependencies on the library
+    def libDependency = openshiftPOM.dependencies.dependency.find { it.artifactId[0].value()[0] == 'slacklib' }
+    openshiftPOM.dependencies[0].remove(libDependency)
     openshiftPOM.remove(openshiftPOM.parent)
-    libraryPOM.dependencies.dependency.each { dependency ->
-      openshiftPOM.dependencies[0].append(dependency)
-    }
 
-    file(openshiftPath.concat('/pom.xml')) withWriter { writer -> 
-      XmlUtil.serialize(openshiftPOM, writer)
-    }
+    // Add the parent dependencies and plugins
+    parentPOM.dependencies.dependency.each { openshiftPOM.dependencies[0].append(it) }
+    parentPOM.build.plugins.plugin.each { openshiftPOM.build.plugins[0].append(it) }
+
+    // Add the library dependencies
+    libraryPOM.dependencies.dependency.each { openshiftPOM.dependencies[0].append(it) }
+
+    file(openshiftPath.concat('/pom.xml')) withWriter { groovy.xml.XmlUtil.serialize(openshiftPOM, it) }
 
     logger.lifecycle 'The OpenShift project has been packaged.'
   }
@@ -43,20 +63,23 @@ task packServer {
 
 task deployServer(dependsOn: packServer) {
   doLast {
-    def commitMessage = "Updated Deployment: ${new Date().format('yyyy-MM-dd hh:mm:ss')}"
+    def git = { String... arguments ->
+        exec {
+          standardOutput = new ByteArrayOutputStream()
+          errorOutput = new ByteArrayOutputStream()
+          workingDir openshiftPath
+          executable 'git'
+          args arguments
+        }
+    }
 
     logger.lifecycle 'Creating commit with changes.'
-    exec {
-      standardOutput = new ByteArrayOutputStream()
-      errorOutput = new ByteArrayOutputStream()
-      workingDir openshiftPath
-      commandLine 'git', 'add', '-A'
-    }
-    exec {
-      standardOutput = new ByteArrayOutputStream()
-      errorOutput = new ByteArrayOutputStream()
-      workingDir openshiftPath
-      commandLine 'git', 'commit', '-m', commitMessage
-    }
+    git 'add', '-A'
+    git 'commit', '-m', "Updated Deployment: ${new Date().format('yyyy-MM-dd hh:mm:ss')}"
+
+    logger.lifecycle 'Deploying to OpenShift.'
+    git 'push'
+
+    logger.lifecycle 'The OpenShift server has been deployed.'
   }
 }
