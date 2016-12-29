@@ -5,6 +5,8 @@ import com.prisch.messages.FailureResponse;
 import com.prisch.messages.Message;
 import com.prisch.messages.MessageMapping;
 import com.prisch.messages.NoContentMessage;
+import com.prisch.oauth.OAuthTokenRequest;
+import com.ullink.slack.simpleslackapi.SlackSession;
 import fi.iki.elonen.NanoHTTPD;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,10 +31,14 @@ public class AgentServer extends RouterHTTPD {
     private BlockingQueue<Message> messageQueue = new ArrayBlockingQueue<>(5);
     private AtomicInteger messageCount = new AtomicInteger();
 
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final SlackSession slackSession;
+
     private long lastConnectionTime;
 
-    public AgentServer(String address, int port) {
+    public AgentServer(String address, int port, SlackSession slackSession) {
         super(address, port);
+        this.slackSession = slackSession;
     }
 
     // ===== Interface =====
@@ -40,6 +47,7 @@ public class AgentServer extends RouterHTTPD {
         addRoute("/command", Method.GET, this::serveCommand); // Long polling for commands
         addRoute("/result", Method.POST, this::serveResult); // Responses to commands
         addRoute("/connect", Method.POST, this::handleConnection); // Checking server availability
+        addRoute("/slack/oauth", Method.GET, this::handleSlackOAuth); // Slack app authorization
 
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         LOGGER.info("Server running on " + getHostname() + ":" + getListeningPort());
@@ -112,6 +120,28 @@ public class AgentServer extends RouterHTTPD {
     private Response handleConnection(IHTTPSession session) {
         LOGGER.info("The client managed to establish a successful connection.");
         return newFixedLengthResponse("OK");
+    }
+
+    private Response handleSlackOAuth(IHTTPSession session) {
+        final String CODE = "code";
+
+        if (!session.getParameters().containsKey(CODE)) {
+            handleInvalidOAuthCode();
+        }
+
+        Optional<String> tokenCode = session.getParameters().get(CODE).stream().findAny();
+        if (!tokenCode.isPresent()) {
+            handleInvalidOAuthCode();
+        }
+
+        executorService.execute(new OAuthTokenRequest(slackSession, tokenCode.get()));
+
+        return newFixedLengthResponse("OK");
+    }
+
+    private Response handleInvalidOAuthCode() {
+        LOGGER.error("Slack did not provide an authorization code.");
+        return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT, "Unable to parse parameters.");
     }
 
     // === Helpers ===

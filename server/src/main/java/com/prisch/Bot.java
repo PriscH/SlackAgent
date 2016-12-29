@@ -18,9 +18,9 @@ public class Bot {
     private final ServerMessageHandlerFactory messageHandlerFactory;
 
     private Bot(String serverHost, int serverPort, String slackToken) {
-        agentServer = new AgentServer(serverHost, serverPort);
         slackSession = SlackSessionFactory.createWebSocketSlackSession(slackToken);
         messageHandlerFactory = new ServerMessageHandlerFactory(slackSession);
+        agentServer = new AgentServer(serverHost, serverPort, slackSession);
     }
 
     private void start() throws Exception {

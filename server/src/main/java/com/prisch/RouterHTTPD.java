@@ -43,7 +43,7 @@ public class RouterHTTPD extends NanoHTTPD {
         } else if  (defaultResponder != null) {
             return defaultResponder.apply(session);
         } else {
-            return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_HTML, "Invalid path or method.");
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Invalid path or method.");
         }
     }
 
