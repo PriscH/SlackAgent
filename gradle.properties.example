@@ -1,0 +1,9 @@
+openshiftHost=
+openshiftUser=
+openshiftKnownhosts=
+openshiftIdentity=
+
+agentHost=
+agentUser=
+agentPassword=
+agentKnownhosts=

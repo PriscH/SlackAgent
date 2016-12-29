@@ -1,5 +1,24 @@
+plugins {
+  id 'org.hidetake.ssh' version '2.7.0'
+}
+
 repositories {
    mavenLocal()
+}
+
+remotes {
+  openshift {
+    host = openshiftHost
+    user = openshiftUser
+    knownHosts = new File(openshiftKnownhosts)
+    identity = new File(openshiftIdentity)
+  }
+  agent {
+    host = agentHost
+	  user = agentUser
+	  password = agentPassword
+	  knownHosts = new File(agentKnownhosts)
+  }
 }
 
 def serverPath = 'server'
@@ -61,12 +80,23 @@ task packServer {
   }
 }
 
-task deployServer(dependsOn: packServer) {
+task stopServer() {
+  doLast {
+    logger.lifecycle 'Stopping server.'
+    ssh.run {
+      session(remotes.openshift) {
+        execute 'gear stop'
+      }
+    }
+    logger.lifecycle 'Server has been stopped.'
+  }
+}
+
+task deployServer(dependsOn: [packServer, stopServer]) {
   doLast {
     def git = { String... arguments ->
         exec {
           standardOutput = new ByteArrayOutputStream()
-          errorOutput = new ByteArrayOutputStream()
           workingDir openshiftPath
           executable 'git'
           args arguments
@@ -81,5 +111,17 @@ task deployServer(dependsOn: packServer) {
     git 'push'
 
     logger.lifecycle 'The OpenShift server has been deployed.'
+  }
+}
+
+task stopAgent() {
+  doLast {
+    logger.lifecycle 'Stopping agent.'
+    ssh.run {
+      session(remotes.agent) {
+        execute './stopagent.sh'
+      }
+    }
+    logger.lifecycle 'Agent has been stopped.'
   }
 }
