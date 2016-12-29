@@ -176,3 +176,8 @@ task deployAgent(dependsOn: [packAgent, stopAgent]) {
     logger.lifecycle 'The agent has been deployed.'
   }
 }
+
+task deployAll(dependsOn: [deployServer, deployAgent])
+
+stopServer.mustRunAfter stopAgent
+deployAgent.mustRunAfter deployServer

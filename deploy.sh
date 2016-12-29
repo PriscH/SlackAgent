@@ -1,0 +1,1 @@
+ gradle -b deploy.gradle $@
