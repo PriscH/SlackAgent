@@ -47,6 +47,7 @@ public class AgentServer extends RouterHTTPD {
         addRoute("/command", Method.GET, this::serveCommand); // Long polling for commands
         addRoute("/result", Method.POST, this::serveResult); // Responses to commands
         addRoute("/connect", Method.POST, this::handleConnection); // Checking server availability
+        addRoute("/slack", Method.POST, this::handleSlackAction); // Slack buttons
         addRoute("/slack/oauth", Method.GET, this::handleSlackOAuth); // Slack app authorization
 
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
@@ -119,7 +120,11 @@ public class AgentServer extends RouterHTTPD {
 
     private Response handleConnection(IHTTPSession session) {
         LOGGER.info("The client managed to establish a successful connection.");
-        return newFixedLengthResponse("OK");
+        return newFixedLengthResponse(null);
+    }
+
+    private Response handleSlackAction(IHTTPSession session) {
+        return newFixedLengthResponse(null);
     }
 
     private Response handleSlackOAuth(IHTTPSession session) {
@@ -136,7 +141,7 @@ public class AgentServer extends RouterHTTPD {
 
         executorService.execute(new OAuthTokenRequest(slackSession, tokenCode.get()));
 
-        return newFixedLengthResponse("OK");
+        return newFixedLengthResponse(null);
     }
 
     private Response handleInvalidOAuthCode() {

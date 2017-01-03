@@ -2,6 +2,7 @@ package com.prisch.oauth;
 
 import com.google.gson.Gson;
 import com.prisch.Bot;
+import com.prisch.oauth.model.OAuthResponse;
 import com.ullink.slack.simpleslackapi.SlackMessageHandle;
 import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.replies.GenericSlackReply;
@@ -32,10 +33,12 @@ public class OAuthTokenRequest implements Runnable {
         SlackMessageHandle<GenericSlackReply> slackReply = slackSession.postGenericSlackCommand(commandParams, "oauth.access");
         String replyText = slackReply.getReply().getPlainAnswer();
 
-        Map replyMap = new Gson().fromJson(replyText, Map.class);
-        String accessToken = replyMap.get("access_token").toString();
+        OAuthResponse authResponse = new Gson().fromJson(replyText, OAuthResponse.class);
 
-        LOGGER.info("Received the access token from Slack: " + accessToken);
+        LOGGER.info("Received the GENERAL access token from Slack: " + authResponse.getAccessToken());
+        if (authResponse.getBot() != null) {
+            LOGGER.info("Received the BOT access token from Slack: " + authResponse.getBot().getAccessToken());
+        }
     }
 
     private Map<String, String> buildCommandParams() {
