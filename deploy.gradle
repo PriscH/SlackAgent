@@ -97,6 +97,18 @@ task stopServer() {
   }
 }
 
+task startServer() {
+  doLast {
+    logger.lifecycle 'Starting server.'
+    ssh.run {
+      session(remotes.openshift) {
+        execute 'gear start'
+      }
+    }
+    logger.lifecycle 'Server has been started.'
+  }
+}
+
 task deployServer(dependsOn: [packServer, stopServer]) {
   def git = { String... arguments ->
       exec {
@@ -157,6 +169,18 @@ task stopAgent() {
   }
 }
 
+task startAgent() {
+  doLast {
+    logger.lifecycle 'Starting agent.'
+    ssh.run {
+      session(remotes.agent) {
+        execute './startagent.sh'
+      }
+    }
+    logger.lifecycle 'Agent has been started.'
+  }
+}
+
 task deployAgent(dependsOn: [packAgent, stopAgent]) {
   def agentSourcePath = agentPath + '/target/agent-jar-with-dependencies.jar'
   def agentDestinationPath = '/home/' + agentUser + '/slackagent.jar'
@@ -179,5 +203,10 @@ task deployAgent(dependsOn: [packAgent, stopAgent]) {
 
 task deployAll(dependsOn: [deployServer, deployAgent])
 
+task stopAll(dependsOn: [stopServer, stopAgent])
+task startAll(dependsOn: [startServer, startAgent])
+
 stopServer.mustRunAfter stopAgent
+startAgent.mustRunAfter startServer
+
 deployAgent.mustRunAfter deployServer
